@@ -1,0 +1,135 @@
+---
+title: "MapMaker"
+output: html_document
+---
+
+```{r, message=F, echo=F}
+# Packages for graphics
+library(ggplot2)
+library(gridExtra)
+library(ggExtra)
+library(naniar) # To visualize missing data
+library(Hmisc) # To tabulate a summary of the data
+library(maps) # for maps
+library(knitr) # format tables
+library(ggplot2) # For diagnostics
+# Packages for data wrangling
+library(dplyr)
+library(tidyr)
+library(reshape2)
+# Packages for inference /presentation of inference*
+library(stargazer)
+library(plm) # For estimating fixed and random effect model
+library(lmtest)
+library(sandwich) # for robust standard errors
+library(knitr)
+opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
+```
+
+### Load data
+```{r, results="hide"}
+# Import
+load("driving.RData")
+# Rename
+df <- data
+# Structure
+str(df)
+# Summary
+summary(df)
+```
+
+## Summary
+```{r , results="hide"}
+# Summary
+describe(df)
+```
+
+## Are there missing values?
+```{r, results="hide"}
+# Are there any missing values/NAs?
+df[!complete.cases(df),]
+```
+
+##
+```{r message=F, warning=F, fig.cap="Growth curves of log(total fatalities per 100,000 population) over time for each state", echo=FALSE}
+
+# Open map data
+MainStates <- map_data("state")
+
+# Add new columns for traffic fatalities over time
+Statesdf <- df %>% 
+  dplyr::select(totfatrte, state, year, statepop) %>%
+  mutate("region" = rep(unique(MainStates$region)[-8],
+                       each=25))
+# By year
+ggplot(Statesdf, aes(x=year, y=log(totfatrte),
+                     colour = region)) +
+  geom_line() + geom_point(size=0.05, alpha=0.5) +
+  facet_wrap(~region) + 
+  theme_classic() +
+  theme(legend.position="none",
+      axis.text.y=element_text(size=4),
+      axis.text.x=element_text(size=4, angle = 90))
+```
+
+##
+```{r message=F, warning=F, fig.cap="A: Histogram of log(total falities/100,000 population). Each color represents a different state. B: Distribution of log(total traffic fatalities/100,000 population)", echo=FALSE}
+
+State.Mu.TF <- Statesdf %>%
+  group_by(region) %>%
+  summarise(TF.mu=mean(log(totfatrte)))
+
+# Rename column
+names(State.Mu.TF)[1] <- "region"
+
+# Merge fatality data with the MainStates data
+JoinedStates <- inner_join(MainStates,
+                           State.Mu.TF, by = "region")
+# plot
+A <- ggplot() + 
+  geom_polygon(data=JoinedStates ,
+               aes(x=long, y=lat, group=group,
+               fill=TF.mu),
+                color="black", lwd=0.3) +
+  scale_fill_gradient(low="blue", high="red") +
+  theme_classic() + coord_map("conic", lat0 = 30) + 
+  labs(title="A",fill=expression("log("~paste(frac("Total fatalities", "100,000 population"))~")"),size=2) +
+  theme(axis.line=element_blank(),
+        axis.text.x=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks=element_blank(),
+        axis.title.x=element_blank(),
+        axis.title.y=element_blank(),
+        legend.position="right",
+        panel.background=element_blank(),
+        panel.border=element_blank(),
+        panel.grid.major=element_blank(),
+        panel.grid.minor=element_blank(),
+        plot.background=element_blank())+
+  theme(legend.title=element_text(size=5))
+#grid.arrange(A,B)
+```
+
+
+##
+```{r message=F,warning=F,  fig.cap="Nationwide log(total fatality rates per 100,000 population)", echo=FALSE}  
+
+B <- ggplot(Statesdf, aes(x=factor(year), y=log(totfatrte)),
+        group=year) +
+  geom_boxplot(color="grey60", outlier.colour = "grey60") +
+  geom_jitter(alpha=0.4,color="grey60",
+              position=position_jitter(width=0.1)) +
+  geom_smooth(method = "loess", se=F, 
+              aes(group=1), span=0.1, color="orangered", alpha=0.7) +
+  labs(title="B", y=expression("log("~paste(frac("Total fatalities", "100,000 population"))~")"), x="Time (1980-2004)") +
+  theme_classic() + 
+  theme(legend.position="none",
+        axis.title.y=element_text(size=8),
+        axis.text.x = element_text(angle = 90))
+B<-ggMarginal(B, type="histogram",
+           margins = "y",
+           col="gray",
+           fill = "grey83")
+
+grid.arrange(A,B)
+```
