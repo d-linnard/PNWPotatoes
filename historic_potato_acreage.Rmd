@@ -1,0 +1,92 @@
+---
+title: "Historic potato acreage WA"
+author: "Hannah Tarlyn"
+date: "9/19/2020"
+output: html_document
+---
+### Load libraries
+```{r}
+library(rnassqs)
+library(pkgmaker)
+library(dplyr)
+library(ggplot2)
+library(data.table)
+```
+### Set API key
+```{r}
+nassqs_auth(key = 'E41D0CC0-8353-3153-A16A-850F2F13AC0E')
+```
+
+### Define search parameters
+```{r}
+nassqs_params()
+```
+#### Parameters to query on the data call
+#### Gather potato data for year 1950 in Washington
+```{r}
+params <- list(commodity_desc = "potatoes", year = 1950, state_alpha = "WA")
+
+nassqs(params)
+```
+# Acreage
+```{r}
+nassqs_acres(params)
+```
+### Collect data from multiple years
+#### Define the list of parameters to use repeatedly
+```{r}
+param_list <- list(commodity_desc = "potatoes", state_alpha = "WA")
+```
+### Acreage, iterate through each year to get data
+```{r}
+data_list <- lapply(1885:2019, function(yr) {
+  params <- param_list
+  params[['year']] <- yr
+  nassqs_acres(params)
+})
+```
+#### Using dplyr to bind the data list
+```{r}
+dta <- rbindlist(data_list, use.names = TRUE)
+```
+### Inspect data structure and features
+#### Check that our record request is under the 50,000 limit
+```{r}
+dim(dta)
+table(dta$year)
+str(dta)
+```
+### Summary statistics
+```{r}
+class(dta$Value)
+dta$Value
+```
+### Coerce value into a number
+```{r}
+dta$value = as.numeric(gsub(",", "", dta$Value))
+dta$value
+summary(as.numeric(dta$value))
+lapply(dta, unique)
+```
+### Plot
+#### Set plot size
+```{r}
+options(repr.plot.width = 20, repr.plot.height = 10)
+```
+#### Create plot
+```{r}
+dta %>%
+  group_by(year) %>%
+  select(year, value, county_name) %>%
+  ggplot(aes(x=year, y=value)) +
+  geom_jitter(aes(colour = county_name), size=5, alpha=3/5) +
+  theme_classic() +
+  theme(axis.title.x=element_text(size=16, face="bold"),
+        axis.text.x=element_text(size=14),
+        axis.title.y=element_text(size=16,face="bold"),
+        axis.text.y=element_text(size=14)) +
+  scale_color_hue(l=70, c=40) +
+  labs(x="Time (1885-2019)",
+       y="Acres") +
+  geom_smooth(method = "loess", span = 0.1, se = FALSE, color="grey40")
+```
