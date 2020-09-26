@@ -1,0 +1,131 @@
+---
+title: "Potato Project Map"
+author: "Hannah Tarlyn"
+date: "9/23/2020"
+output: html_document
+---
+## Map Data
+### Install and load packages
+```{r}
+library("rnaturalearth")
+library("rnaturalearthdata")
+library("ggplot2")
+library("rworldmap")
+library(dplyr)
+library(geosphere)
+library(gpclib)
+library(tidyverse)
+library(mapdata)
+library(raster)
+library(geojsonio)
+library(usmap)
+```
+## World Map
+```{r}
+worldMap <- getMap()
+world.points <- fortify(worldMap)
+world.points$region <- world.points$id
+states <- map_data("state")
+states = states %>%
+  filter(region %in% c("montana", "california","washington","pennsylvania"))#
+
+world.df <- world.points[,c("long","lat","group", "region")]
+
+p = worldmap <- ggplot() + 
+  geom_polygon(data = world.df, aes(x = long, y = lat, group = group),
+               color="grey", fill="grey") +
+  geom_polygon(data = states, aes(x = long, y = lat, group = group),
+               color="black", fill="grey", lwd=0.35) +
+  scale_y_continuous(breaks = (-2:2) * 30) +
+  scale_x_continuous(breaks = (-4:4) * 45) +
+  coord_map("ortho", orientation=c(40, -90, 0))
+
+p
+
+setwd('/Users/Hannah 23/Documents')
+
+tiff('PA.tiff', units="in", 
+     width=5, height=5,
+     res=600, compression = 'lzw')
+p
+dev.off()
+```
+
+## PNW
+### Obtain data, states and provinces in and around PNW
+```{r}
+us <- getData("GADM",country="USA",level=1)
+canada <- getData("GADM",country="CAN",level=1)
+states <- c('Idaho', 'Oregon', 'Washington', 'Montana', 'California', 'Nevada', 'Utah', 'Wyoming')
+provinces <- c("British Columbia", "Alberta")
+```
+### Subset data
+```{r}
+us.states <- us[us$NAME_1 %in% states,]
+ca.provinces  <- canada[canada$NAME_1 %in% provinces,]
+```
+### Plot
+```{r}
+p <- ggplot(us.states,
+       aes(x=long, y=lat, group=group))+
+  geom_path(size=0.25)+
+  geom_path(data=ca.provinces, size=0.25,color="grey60")+
+  geom_path(data=subset(us.states, NAME_1 %in% c('Montana', 'California','Nevada','Utah','Wyoming')),
+            size=0.25,color="grey60")+
+  geom_polygon(data=subset(us.states, NAME_1 %in% c('Idaho', 'Oregon', 'Washington')),
+               aes(x=long, y=lat, group=group), fill="white", colour = "black", size=0.50)+
+  theme(panel.background = element_rect(fill = "white", colour = "grey50"))+
+  coord_map("bonne", lat0 = 50,
+            xlim = c(-127, -112),ylim = c(41, 50))+
+  xlab("Longitude") +
+  ylab("Latitude")
+  
+```
+
+```{r}
+setwd('/Users/Hannah 23/Documents')
+
+```
+#### Changing plot size
+```{r}
+tiff('PNW-s.tiff', units="in", 
+     width=10, height=10,
+     res=300, compression = 'lzw')
+options(repr.plot.width=20, repr.plot.height=20)
+p
+dev.off()
+```
+
+## Washington counties mapping
+
+### Load packages
+```{r, message=F, echo=F}
+# Packages for graphics
+library(ggplot2)
+library(gridExtra)
+library(ggExtra)
+library(naniar) # To visualize missing data
+library(Hmisc) # To tabulate a summary of the data
+library(maps) # for maps
+library(knitr) # format tables
+library(ggplot2) # For diagnostics
+# Packages for data wrangling
+library(dplyr)
+library(tidyr)
+library(reshape2)
+# Packages for inference /presentation of inference*
+library(stargazer)
+library(plm) # For estimating fixed and random effect model
+library(lmtest)
+library(sandwich) # for robust standard errors
+library(knitr)
+opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
+```
+### Load historic potato acreage data
+```{r}
+
+```
+### WA county map
+```{r}
+plot_usmap(regions = "counties", include = c("WA"))
+```
