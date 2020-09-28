@@ -83,8 +83,9 @@ State.Mu.TF <- Statesdf %>%
 names(State.Mu.TF)[1] <- "region"
 
 # Merge fatality data with the MainStates data
-JoinedStates <- inner_join(MainStates,
-                           State.Mu.TF, by = "region")
+JoinedStates <- inner_join(MainStates,# df1
+                           State.Mu.TF,# df2
+                           by = "region") # join by column "region"
 # plot
 A <- ggplot() + 
   geom_polygon(data=JoinedStates ,
