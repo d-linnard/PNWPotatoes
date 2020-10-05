@@ -39,7 +39,7 @@ param_list <- list(commodity_desc = "potatoes", state_alpha = "WA")
 ```
 ### Acreage, iterate through each year to get data
 ```{r}
-data_list <- lapply(1885:2019, function(yr) {
+data_list <- lapply(1882:2019, function(yr) {
   params <- param_list
   params[['year']] <- yr
   nassqs_acres(params)
@@ -86,7 +86,7 @@ dta %>%
         axis.title.y=element_text(size=16,face="bold"),
         axis.text.y=element_text(size=14)) +
   scale_color_hue(l=70, c=40) +
-  labs(x="Time (1885-2019)",
+  labs(x="Time (1882-2019)",
        y="Acres") +
   geom_smooth(method = "loess", span = 0.1, se = FALSE, color="grey40")
 ```
