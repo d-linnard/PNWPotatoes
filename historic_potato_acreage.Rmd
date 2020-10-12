@@ -304,3 +304,14 @@ grid.arrange(A,B)
 ```{r}
 plot_usmap(regions = "counties", include = c("WA"))
 ```
+### Additional mapping code
+```{r}
+states <- map_data("state")
+dim(states)
+ut_df <- subset(states, region == "washington")
+head(ut_df)
+
+counties <- map_data("county")
+ut_county <- subset(counties, region == "washington")
+head(ut_county)
+```
