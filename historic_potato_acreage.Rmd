@@ -51,7 +51,7 @@ dta <- rbindlist(data_list, use.names = TRUE)
 ```
 ### Inspect data structure and features
 #### Check that our record request is under the 50,000 limit
-```{r}
+```{r, results='hide'}
 dim(dta)
 table(dta$year)
 str(dta)
@@ -325,3 +325,12 @@ ut_base + theme_classic() +
 geom_polygon(data = ut_county, fill = NA, color = "white") +
 geom_polygon(color = "black", fill = NA)  # get the state border back on top
 ```
+
+
+### Graveyard
+- This code chunk does XYZ
+```{r}
+df %>%
+  dplyr::select('AverageAcerage' = mean(acerage)) # package::function()
+```
+
