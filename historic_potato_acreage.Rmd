@@ -228,15 +228,77 @@ summary("df")
 is.na(x)
 ```
 ### Open map data
-```{r}
+```{r message=F, warning=F, fig.cap="Potato acreage in Washington state over time", echo=FALSE}
 MainStates <- map_data("state")
+
+### Add new columns for potato acerage over time, subset of dta dataframe. Select columns for value (acreage), state_name (Washington), year and county_name. (Check back:Mutate to create new column called region.There are 2913 rows of data.)
+
+Statesdf <- dta[ , c("value", "state_name", "year", "county_name")]%>%
+  mutate("region" = rep(unique(MainStates$region)[2913],
+                       each=1))
+
+### Plot acreage(value) by year, need add color. Log(value)?
+
+ggplot(Statesdf, aes(x=year, y=value)) +
+  geom_line() + geom_point(size=0.05, alpha=0.5) +
+  facet_wrap(~region) + 
+  theme_classic() +
+  theme(legend.position="none",
+      axis.text.y=element_text(size=4),
+      axis.text.x=element_text(size=4, angle = 90))
 ```
-### Add new columns for potato acerage over time
-```{r}
-Statesdf <- df %>%
-  dplyr::select(acerage, state, year, county) %>%
-  mutate("region" = rep(unique(MainStates$region)[-8],
-                        each=25))
+### WA county map plotting as histogram
+```{r message=F, warning=F, fig.cap="A: Histogram of potato acreage in Washington state over time. Each color represents a different county. B: Distribution of acreage", echo=FALSE}
+State.Mu.TF <- Statesdf %>%
+  group_by(region) %>%
+  summarise(TF.mu=mean(value))
+### Rename region column
+names(State.Mu.TF)[1] <- "region"
+### Join acreage data with map data
+JoinedStates <- inner_join(MainStates, 
+                           State.Mu.TF,
+                           by = "region")
+### Plots
+A <- ggplot() + 
+  geom_polygon(data=JoinedStates ,
+               aes(x=long, y=lat, group=group,
+               fill=TF.mu),
+                color="black", lwd=0.3) +
+  scale_fill_gradient(low="blue", high="red") +
+  theme_classic() + coord_map("conic", lat0 = 30) + 
+  labs(title="A",fill=expression("Potato acreage in Washington state over time"),size=2) +
+  theme(axis.line=element_blank(),
+        axis.text.x=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks=element_blank(),
+        axis.title.x=element_blank(),
+        axis.title.y=element_blank(),
+        legend.position="right",
+        panel.background=element_blank(),
+        panel.border=element_blank(),
+        panel.grid.major=element_blank(),
+        panel.grid.minor=element_blank(),
+        plot.background=element_blank())+
+  theme(legend.title=element_text(size=5))
+
+B <- ggplot(Statesdf, aes(x=factor(year), y=value),
+        group=year) +
+  geom_boxplot(color="grey60", outlier.colour = "grey60") +
+  geom_jitter(alpha=0.4,color="grey60",
+              position=position_jitter(width=0.1)) +
+  geom_smooth(method = "loess", se=F, 
+              aes(group=1), span=0.1, color="orangered", alpha=0.7) +
+  labs(title="B", y=expression("Potato acreage in Washington state over time"), x="Time (1882-2019)") +
+  theme_classic() + 
+  theme(legend.position="none",
+        axis.title.y=element_text(size=8),
+        axis.text.x = element_text(angle = 90))
+B<-ggMarginal(B, type="histogram",
+           margins = "y",
+           col="gray",
+           fill = "grey83")
+           
+grid.arrange(A,B)
 ```
 ### WA county map
 ```{r}
