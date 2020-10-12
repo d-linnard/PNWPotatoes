@@ -302,6 +302,7 @@ grid.arrange(A,B)
 ```
 ### WA county map
 ```{r}
+### First option for map
 plot_usmap(regions = "counties", include = c("WA"))
 ```
 ### Additional mapping code
@@ -314,4 +315,13 @@ head(ut_df)
 counties <- map_data("county")
 ut_county <- subset(counties, region == "washington")
 head(ut_county)
+### Second option for map
+ut_base <- ggplot(data = ut_df, mapping = aes(x = long, y = lat, group = 
+group)) +
+coord_fixed(1.3) +
+geom_polygon(color = "black", fill = "gray")
+
+ut_base + theme_classic() +
+geom_polygon(data = ut_county, fill = NA, color = "white") +
+geom_polygon(color = "black", fill = NA)  # get the state border back on top
 ```
