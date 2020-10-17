@@ -300,12 +300,187 @@ B<-ggMarginal(B, type="histogram",
            
 grid.arrange(A,B)
 ```
-### WA county map
+### Average acreage per county, counties with single digit acreages have notes
 ```{r}
-### First option for map
-plot_usmap(regions = "counties", include = c("WA"))
+# Adams
+AdamsData <- subset(dta, county_name == 'ADAMS') 
+AdamsAverageAcreage <- mean(AdamsData$value, na.rm = TRUE)
+
+# Asotin
+AsotinData <- subset(dta, county_name == 'ASOTIN')
+AsotinAverageAcreage <- mean(AsotinData$value, na.rm = TRUE)
+### Asotin only has 1 acre listed for 2 years of recorded data?
+
+# Benton
+BentonData <- subset(dta, county_name == 'BENTON')
+BentonAverageAcreage <- mean(BentonData$value, na.rm = TRUE)
+
+# Chelan
+ChelanData <- subset(dta, county_name == 'CHELAN')
+ChelanAverageAcreage <- mean(ChelanData$value, na.rm = TRUE)
+### Weird values too, only 1 or 2 acres listed
+
+# Clallam
+ClallamData <- subset(dta, county_name == 'CLALLAM')
+ClallamAverageAcreage <- mean(ClallamData$value, na.rm = TRUE)
+### Weird low acreages 
+
+# Clark
+ClarkData <- subset(dta, county_name == 'CLARK')
+ClarkAverageAcreage <- mean(ClarkData$value, na.rm = TRUE)
+
+# Columbia
+ColumbiaData <- subset(dta, county_name == 'COLUMBIA')
+ColumbiaAverageAcreage <- mean(ColumbiaData$value, na.rm = TRUE)
+### All values N/A or listed as "D"
+
+# Cowlitz
+CowlitzData<- subset(dta, county_name == 'COWLITZ')
+CowlitzAverageAcreage <- mean(CowlitzData$value, na.rm = TRUE)
+
+# Douglas
+DouglasData <- subset(dta, county_name == 'DOUGLAS')
+DouglasAverageAcreage <- mean(DouglasData$value, na.rm = TRUE)
+
+# Ferry
+FerryData <- subset(dta, county_name == 'FERRY')
+FerryAverageAcreage <- mean(FerryData$value, na.rm = TRUE)
+### Only 1 acre listed
+
+# Franklin
+FranklinData <- subset(dta, county_name == 'FRANKLIN')
+FranklinAverageAcreage <- mean(FranklinData$value, na.rm = TRUE)
+
+# Garfield, none
+
+# Grant
+GrantData <- subset(dta, county_name == 'GRANT')
+GrantAverageAcreage <- mean(GrantData$value, na.rm = TRUE)
+
+# Grays Harbor
+GraysHarborData <- subset(dta, county_name == 'GRAYS HARBOR')
+GraysHarborAverageAcreage <- mean(GraysHarborData$value, na.rm = TRUE)
+
+# Island
+IslandData <- subset(dta, county_name == 'ISLAND')
+IslandAverageAcreage <- mean(IslandData$value, na.rm = TRUE)
+
+# Jefferson
+JeffersonData <- subset(dta, county_name == 'JEFFERSON')
+JeffersonAverageAcreage <- mean(JeffersonData$value, na.rm = TRUE)
+### Low acreage
+
+# King
+KingData <- subset(dta, county_name == 'KING')
+KingAverageAcreage <- mean(KingData$value, na.rm = TRUE)
+
+# Kitsap
+KitsapData <- subset(dta, county_name == 'KITSAP')
+KitsapAverageAcreage <- mean(KitsapData$value, na.rm = TRUE)
+### Low acreage
+
+# Kittitas
+KittitasData <- subset(dta, county_name == 'KITTITAS')
+KittitasAverageAcreage <- mean(KittitasData$value, na.rm = TRUE)
+
+# Klickitat
+KlickitatData <- subset(dta, county_name == 'KLICKITAT')
+KlickitatAverageAcreage <- mean(KlickitatData$value, na.rm = TRUE)
+
+# Lewis
+LewisData <- subset(dta, county_name == 'LEWIS')
+LewisAverageAcreage <- mean(LewisData$value, na.rm = TRUE)
+### Low acreage
+
+# Lincoln
+LincolnData <- subset(dta, county_name == 'LINCOLN')
+LincolnAverageAcreage <- mean(LincolnData$value, na.rm = TRUE)
+
+# Mason
+MasonData <- subset(dta, county_name == 'MASON')
+MasonAverageAcreage <- mean(MasonData$value, na.rm = TRUE)
+### Low acreage
+
+# Okanogan
+OkanoganData <- subset(dta, county_name == 'OKANOGAN')
+OkanoganAverageAcreage <- mean(OkanoganData$value, na.rm = TRUE)
+
+# Pacific
+PacificData <- subset(dta, county_name == 'PACIFIC')
+PacificAverageAcreage <- mean(PacificData$value, na.rm = TRUE)
+### Low acreage
+
+# Pend Oreille
+PendOreilleData <- subset(dta, county_name == 'PEND OREILLE')
+PendOreilleAverageAcreage <- mean(PendOreilleData$value, na.rm = TRUE)
+### Low acreage
+
+# Pierce
+PierceData <- subset(dta, county_name == 'PIERCE')
+PierceAverageAcreage <- mean(PierceData$value, na.rm = TRUE)
+
+# San Juan
+SanJuanData <- subset(dta, county_name == 'SAN JUAN')
+SanJuanAverageAcreage <- mean(SanJuanData$value, na.rm = TRUE)
+### Low acreage
+
+# Skagit
+SkagitData <- subset(dta, county_name == 'SKAGIT')
+SkagitAverageAcreage <- mean(SkagitData$value, na.rm = TRUE)
+
+# Skamania
+SkamaniaData <- subset(dta, county_name == 'SKAMANIA')
+SkamaniaAverageAcreage <- mean(SkamaniaData$value, na.rm = TRUE)
+### Low acreage
+
+# Snohomish
+SnohomishData<- subset(dta, county_name == 'SNOHOMISH')
+SnohomishAverageAcreage <- mean(SnohomishData$value, na.rm = TRUE)
+
+# Spokane
+SpokaneData <- subset(dta, county_name == 'SPOKANE')
+SpokaneAverageAcreage <- mean(SpokaneData$value, na.rm = TRUE)
+
+# Stevens
+StevensData <- subset(dta, county_name == 'STEVENS')
+StevensAverageAcreage <- mean(StevensData$value, na.rm = TRUE)
+
+# Thurston
+ThurstonData <- subset(dta, county_name == 'THURSTON')
+ThurstonAverageAcreage <- mean(ThurstonData$value, na.rm = TRUE)
+### Low acreage
+
+# Wahkiakum
+WahkiakumData <- subset(dta, county_name == 'WAHKIAKUM')
+WahkiakumAverageAcreage <- mean(WahkiakumData$value, na.rm = TRUE)
+### Low acreage
+
+# Walla Walla
+WallaWallaData <- subset(dta, county_name == 'WALLA WALLA')
+WallaWallaAverageAcreage <- mean(WallaWallaData$value, na.rm = TRUE)
+
+# Whatcom
+WhatcomData <- subset(dta, county_name == 'WHATCOM')
+WhatcomAverageAcreage <- mean(WhatcomData$value, na.rm = TRUE)
+
+# Whitman
+WhitmanData <- subset(dta, county_name == 'WHITMAN')
+WhitmanAverageAcreage <- mean(WhitmanData$value, na.rm = TRUE)
+
+# Yakima
+YakimaData<- subset(dta, county_name == 'YAKIMA')
+YakimaAverageAcreage <- mean(YakimaData$value, na.rm = TRUE)
+
+# Other/unlisted
+OtherUnlistedData <- subset(dta, county_name == '')
+OtherUnlistedAverageAcreage <- mean(OtherUnlistedData$value, na.rm = TRUE)
 ```
-### Additional mapping code
+### Dataframe of means
+```{r}
+WACountyMeans <- data.frame(AdamsAverageAcreage, AsotinAverageAcreage, BentonAverageAcreage, ChelanAverageAcreage, ClallamAverageAcreage, ClarkAverageAcreage, ColumbiaAverageAcreage, CowlitzAverageAcreage, DouglasAverageAcreage, FerryAverageAcreage, FranklinAverageAcreage, GrantAverageAcreage, GraysHarborAverageAcreage, IslandAverageAcreage, JeffersonAverageAcreage, KingAverageAcreage, KitsapAverageAcreage, KittitasAverageAcreage, KlickitatAverageAcreage, LewisAverageAcreage, LincolnAverageAcreage, MasonAverageAcreage, OkanoganAverageAcreage, PacificAverageAcreage, PendOreilleAverageAcreage, PierceAverageAcreage, SanJuanAverageAcreage, SkagitAverageAcreage, SkamaniaAverageAcreage, SnohomishAverageAcreage, SpokaneAverageAcreage, StevensAverageAcreage, ThurstonAverageAcreage, WahkiakumAverageAcreage, WallaWallaAverageAcreage, WhatcomAverageAcreage, WhitmanAverageAcreage, YakimaAverageAcreage, OtherUnlistedAverageAcreage)
+
+### WA county map
+
 ```{r}
 states <- map_data("state")
 dim(states)
@@ -315,7 +490,7 @@ head(ut_df)
 counties <- map_data("county")
 ut_county <- subset(counties, region == "washington")
 head(ut_county)
-### Second option for map
+
 ut_base <- ggplot(data = ut_df, mapping = aes(x = long, y = lat, group = 
 group)) +
 coord_fixed(1.3) +
@@ -329,6 +504,7 @@ geom_polygon(color = "black", fill = NA)  # get the state border back on top
 
 ### Graveyard
 - This code chunk does XYZ
+-This code gives a county map of WA, not using ggplot plot_usmap(regions = "counties", include = c("WA"))
 ```{r}
 df %>%
   dplyr::select('AverageAcerage' = mean(acerage)) # package::function()
