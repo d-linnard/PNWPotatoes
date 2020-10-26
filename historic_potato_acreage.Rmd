@@ -18,7 +18,7 @@ nassqs_auth(key = 'E41D0CC0-8353-3153-A16A-850F2F13AC0E')
 ```
 
 ### Define search parameters
-```{r}
+```{r, results="hide"}
 nassqs_params()
 ```
 #### Parameters to query on the data call
@@ -474,11 +474,26 @@ YakimaAverageAcreage <- mean(YakimaData$value, na.rm = TRUE)
 OtherUnlistedData <- subset(dta, county_name == '')
 OtherUnlistedAverageAcreage <- mean(OtherUnlistedData$value, na.rm = TRUE)
 ```
+
+```{r}
+# Automate county level average for each county
+MuAcreageDf <- dta %>%
+  group_by(county_name) %>%
+  summarise('MuAcres' = mean(value, na.rm=T)) %>%
+  dplyr::select(MuAcres, county_name) 
+
+# Coerce Value to numeric
+as.numeric(as.character(dta$Value))
+class(dta)
+
+dta[county_name == "COLUMBIA",] # what does (D) mean?- Not enough farms to enable anonymity (pg.X in doc Y)
+```
 ### Dataframe of means
 ```{r}
 WACountyMeans <- data.frame(AdamsAverageAcreage, AsotinAverageAcreage, BentonAverageAcreage, ChelanAverageAcreage, ClallamAverageAcreage, ClarkAverageAcreage, ColumbiaAverageAcreage, CowlitzAverageAcreage, DouglasAverageAcreage, FerryAverageAcreage, FranklinAverageAcreage, GrantAverageAcreage, GraysHarborAverageAcreage, IslandAverageAcreage, JeffersonAverageAcreage, KingAverageAcreage, KitsapAverageAcreage, KittitasAverageAcreage, KlickitatAverageAcreage, LewisAverageAcreage, LincolnAverageAcreage, MasonAverageAcreage, OkanoganAverageAcreage, PacificAverageAcreage, PendOreilleAverageAcreage, PierceAverageAcreage, SanJuanAverageAcreage, SkagitAverageAcreage, SkamaniaAverageAcreage, SnohomishAverageAcreage, SpokaneAverageAcreage, StevensAverageAcreage, ThurstonAverageAcreage, WahkiakumAverageAcreage, WallaWallaAverageAcreage, WhatcomAverageAcreage, WhitmanAverageAcreage, YakimaAverageAcreage, OtherUnlistedAverageAcreage)
-
+```
 ### WA county map
+
 
 ```{r}
 states <- map_data("state")
@@ -505,7 +520,7 @@ geom_polygon(color = "black", fill = NA)  # get the state border back on top
 - This code chunk does XYZ
 -This code gives a county map of WA, not using ggplot plot_usmap(regions = "counties", include = c("WA"))
 ```{r}
-df %>%
-  dplyr::select('AverageAcerage' = mean(acerage)) # package::function()
+# df %>%
+#   dplyr::select('AverageAcerage' = mean(acerage)) # package::function()
 ```
 

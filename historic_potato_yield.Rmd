@@ -96,7 +96,7 @@ head(yield$Value) #Head will show only the first 5 entries.
 yield$ValueInteger = as.integer(yield$Value) 
 # Sanity check
 head(yield)
-plot(yield$value, yield$ValueInteger)
+plot(yield$value, yield$ValueInteger) # error x and y differ in lengths
 ```
 </br>
 
