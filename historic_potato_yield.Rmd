@@ -1,0 +1,127 @@
+---
+title: "Washington State Potato Yields Over Time"
+author: "El Nazarov"
+date: "9/16/2020"
+output: html_document
+---
+
+  
+
+#### Resource: https://docs.ropensci.org/rnassqs/  
+</br>  
+
+##### Load libraries.  
+```{r message=FALSE, warning=FALSE}
+library(rnassqs) # For harvest yield data
+library(pkgmaker)
+library(dplyr)
+library(ggplot2)
+library(data.table)
+```  
+</br>  
+
+##### Set API key. 
+API key: 603EE21B-9682-3233-8C15-260C6E388A51
+```{r}
+nassqs_auth(key = '603EE21B-9682-3233-8C15-260C6E388A51')
+# I have yet to determine how to go about hiding the API key in the script itself.
+```
+</br>  
+
+##### Define search parameters.
+```{r}
+nassqs_params()
+```
+</br>
+
+##### Define search parameters: potato yield data from Washington state
+```{r}
+# Parameters to query on the data call
+params <- list(commodity_desc = "potatoes", # We are looking at data on potatoes
+               state_alpha = "wa") # We are looking for data from only Washington State
+```
+</br>
+
+#### Harvest potato yield data from Washington state
+```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
+nassqs_yields(params) 
+```
+</br>
+
+## Define new dataframe  of potato yield data in WA
+```{r include=FALSE}
+yield_df <- nassqs_yields(params) #define the data frame to a variable
+```
+</br>
+
+## From here, a narrower selection of data can begin (sanity check). 
+```{r}
+str(yield_df) #find desired parameters within data frame
+```
+</br>
+
+#### Sanity check: confirm that the desired time frame was collected. And establish time frame from which data will be collected.
+```{r}
+plot(table(yield_df$year)) #This shows that there is at least 1 entry for each year the data is available, 1882-2019.
+```
+</br>
+
+#### Select/subset desired parameters/columns.  
+Choose from options listed in the structure.
+```{r}
+yield <- yield_df %>% select(Value, 
+                             commodity_desc, 
+                             county_name,
+                             year, 
+                             state_alpha,
+                             unit_desc,
+                             statisticcat_desc) 
+```
+</br>
+
+#### Sanity check: determine class of the value. clean up the new data frame.
+```{r}
+class(yield$Value)
+```
+</br>
+
+### Sanity check
+```{r}
+head(yield$Value) #Head will show only the first 5 entries.
+```
+</br>
+
+### Coerce "Value" vector from character to number.
+```{r}
+yield$ValueInteger = as.integer(yield$Value) 
+# Sanity check
+head(yield)
+plot(yield$value, yield$ValueInteger)
+```
+</br>
+
+#### Summary
+```{r}
+summary(yield$value)
+```
+</br>
+
+#### Plot
+```{r}
+options(repr.plot.width = 20, repr.plot.height = 10) # Plot size
+
+yield %>%
+group_by(year) %>%
+select(year, value, county_name) %>%
+ggplot(aes(x=year, y=value)) +
+geom_jitter(aes(colour = county_name), size=5, alpha=3/5) +
+theme_classic() + 
+theme(axis.title.x=element_text(size=16, face="bold"),
+      axis.text.x=element_text(size=14),
+      axis.title.y=element_text(size=16,face="bold"),
+      axis.text.y=element_text(size=14)) +
+scale_color_hue(l=70, c=40) +
+labs(x="Time (1882-2019)",
+    y="Yield (CWT/acre)")  +
+geom_smooth(method = "loess", span = 0.1, se = FALSE, color="grey40")
+```
