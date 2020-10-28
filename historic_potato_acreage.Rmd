@@ -351,6 +351,7 @@ FranklinData <- subset(dta, county_name == 'FRANKLIN')
 FranklinAverageAcreage <- mean(FranklinData$value, na.rm = TRUE)
 
 # Garfield, none
+GarfieldAverageAcreage <- 0
 
 # Grant
 GrantData <- subset(dta, county_name == 'GRANT')
@@ -519,8 +520,39 @@ geom_polygon(color = "black", fill = NA)  # get the state border back on top
 ### Graveyard
 - This code chunk does XYZ
 -This code gives a county map of WA, not using ggplot plot_usmap(regions = "counties", include = c("WA"))
+- Good example on how to color-code based on value ranges: 
+ scale_color_manual(name = "value",
+                     values = c("(-Inf,10]" = "red",
+                                  "(10,100]" = "yellow",
+                                  "(100, Inf]" = "black"),
+                     labels = c("Acreage <= 10", "10 < Acreage <= 100", "Acreage > 100"))
 ```{r}
-# df %>%
-#   dplyr::select('AverageAcerage' = mean(acerage)) # package::function()
+df %>%
+  dplyr::select('AverageAcerage' = mean(acerage)) # package::function()
+  ```
+  # Outlier plot
+  
+```{r}
+dta %>%
+  group_by(year) %>%
+  select(year, value, county_name) %>%
+  ggplot(aes(x=year, y=value)) +
+  geom_point(aes(colour = cut(value, c(-Inf, 10, 100, Inf))),
+             size = 1)+
+  scale_color_manual(name = "value",
+                     values = c("(-Inf,10]" = "red",
+                                  "(10,100]" = "yellow",
+                                  "(100, Inf]" = "black"),
+                     labels = c("Acreage <= 10", "10 < Acreage <= 100", "Acreage > 100")) +
+  theme_classic() +
+  theme(axis.title.x=element_text(size=16, face="bold"),
+        axis.text.x=element_text(size=14),
+        axis.title.y=element_text(size=16,face="bold"),
+        axis.text.y=element_text(size=14)) +
+  labs(x="Time (1882-2019)",
+       y="Acres") +
+  ggtitle("WA County Historic Potato Acreages") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  geom_smooth(method = "loess", span = 0.1, se = FALSE, color="grey40")+
+  theme(legend.position = "right")  
 ```
-
