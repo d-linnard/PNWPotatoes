@@ -480,8 +480,12 @@ OtherUnlistedAverageAcreage <- mean(OtherUnlistedData$value, na.rm = TRUE)
 # Automate county level average for each county
 MuAcreageDf <- dta %>%
   group_by(county_name) %>%
-  summarise('MuAcres' = mean(value, na.rm=T)) %>%
+  summarise('MuAcres' = mean(dta$value, na.rm = TRUE)) %>%
   dplyr::select(MuAcres, county_name) 
+#Subset county data
+WACountyData <- aggregate(dta[, 40], list(dta$county_name), mean, na.rm = TRUE)
+#Above is not matching the hard coded WACountyMeans data, some county means match, some don't, some that had values in WaCountyMeans are returning NaN in WaCountyData
+
 
 # Coerce Value to numeric
 as.numeric(as.character(dta$Value))
