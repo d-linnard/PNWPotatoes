@@ -62,7 +62,7 @@ class(dta$Value)
 dta$Value
 ```
 ### Coerce value into a number
-```{r}
+```{r setup, include=FALSE, warning=F}
 dta$value = as.numeric(gsub(",", "", dta$Value))
 dta$value
 summary(as.numeric(dta$value))
@@ -224,7 +224,7 @@ summary("df")
 ```
 ### Check for missing values
 ```{r}
-is.na(x)
+is.na(df)
 ```
 ### Open map data
 ```{r message=F, warning=F, fig.cap="Potato acreage in Washington state over time", echo=FALSE}
@@ -480,10 +480,16 @@ OtherUnlistedAverageAcreage <- mean(OtherUnlistedData$value, na.rm = TRUE)
 # Automate county level average for each county
 MuAcreageDf <- dta %>%
   group_by(county_name) %>%
-  summarise('MuAcres' = mean(dta$value, na.rm = TRUE)) %>%
+  summarise('MuAcres' = mean(value, na.rm = TRUE)) %>%
   dplyr::select(MuAcres, county_name) 
 #Subset county data
-WACountyData <- aggregate(dta[, 40], list(dta$county_name), mean, na.rm = TRUE)
+WACountyData <- aggregate(dta[, "value"],
+                          by = list(dta$county_name),
+                          FUN = mean,
+                          na.rm = TRUE,
+                          data = dta)
+
+
 ###Above is not matching the hard coded WACountyMeans data, some county means match, some don't, some that had values in WaCountyMeans are returning NaN in WaCountyData
 
 #Need to manually add in Garfield county after Franklin county (not included on original dataframe, did not have any potato acreage listed)
@@ -543,8 +549,9 @@ geom_polygon(color = "black", fill = NA)  # get the state border back on top
 ```{r}
 df %>%
   dplyr::select('AverageAcerage' = mean(acerage)) # package::function()
-  ```
-  # Outlier plot
+```
+
+# Outlier plot
   
 ```{r}
 dta %>%
