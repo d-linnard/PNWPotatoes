@@ -57,7 +57,7 @@ table(dta$year)
 str(dta)
 ```
 ### Summary statistics
-```{r}
+```{r setup, include=FALSE}
 class(dta$Value)
 dta$Value
 ```
