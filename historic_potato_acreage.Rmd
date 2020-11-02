@@ -484,8 +484,18 @@ MuAcreageDf <- dta %>%
   dplyr::select(MuAcres, county_name) 
 #Subset county data
 WACountyData <- aggregate(dta[, 40], list(dta$county_name), mean, na.rm = TRUE)
-#Above is not matching the hard coded WACountyMeans data, some county means match, some don't, some that had values in WaCountyMeans are returning NaN in WaCountyData
+###Above is not matching the hard coded WACountyMeans data, some county means match, some don't, some that had values in WaCountyMeans are returning NaN in WaCountyData
 
+#Need to manually add in Garfield county after Franklin county (not included on original dataframe, did not have any potato acreage listed)
+
+
+#Delete first row in WaCountyData that is blank in the county row and the average of all the counties in the other row
+WACountyData <- WACountyData[-c(1),]
+
+#Rename county column in WACountyData to "subregion" to match the map county column name and change the WACountyData counties to all lowercase to match the map dataframe so they can be joined
+colnames(WACountyData)[1] <- "subregion"
+
+WACountyData = as.data.frame(sapply(WACountyData, tolower))
 
 # Coerce Value to numeric
 as.numeric(as.character(dta$Value))
