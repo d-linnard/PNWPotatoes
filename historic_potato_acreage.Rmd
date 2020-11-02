@@ -18,7 +18,7 @@ nassqs_auth(key = 'E41D0CC0-8353-3153-A16A-850F2F13AC0E')
 ```
 
 ### Define search parameters
-```{r, results="hide"}
+```{r setup, include=FALSE}
 nassqs_params()
 ```
 #### Parameters to query on the data call
@@ -209,7 +209,7 @@ library(knitr)
 opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
 ```
 ### Load historic potato acreage data
-```{r}
+```{r setup, include=FALSE}
 data_list #Load in acreage
 #Rename dataframe
 df <- data_list
