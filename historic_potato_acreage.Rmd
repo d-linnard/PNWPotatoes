@@ -344,8 +344,12 @@ counties <- map_data("county")
 ut_county <- subset(counties, region == "washington")
 head(ut_county)
 
-ut_base <- ggplot(data = ut_df, mapping = aes(x = long, y = lat, group = 
-group)) +
+ut_base <- ggplot(data = ut_df,
+                  mapping = aes(x = long,
+                                y = lat,
+                                group = 
+group,
+fill = subregion)) +
 coord_fixed(1.3) +
 geom_polygon(color = "black", fill = "gray")
 
