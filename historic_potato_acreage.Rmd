@@ -22,7 +22,7 @@ nassqs_auth(key = 'E41D0CC0-8353-3153-A16A-850F2F13AC0E')
 nassqs_params()
 ```
 #### Parameters to query on the data call
-#### Gather potato data for year 1950 in Washington
+#### Sanity check: Gather potato data for year 1950 in Washington
 ```{r}
 params <- list(commodity_desc = "potatoes", year = 1950, state_alpha = "WA")
 
@@ -51,7 +51,7 @@ dta <- rbindlist(data_list, use.names = TRUE)
 ```
 ### Inspect data structure and features
 #### Check that our record request is under the 50,000 limit
-```{r, results='hide'}
+```{r setup, include=FALSE}
 dim(dta)
 table(dta$year)
 str(dta)
@@ -215,7 +215,7 @@ data_list #Load in acreage
 df <- data_list
 ```
 ### Summary of dataframe
-```{r}
+```{r setup, include=FALSE}
 #Checking structure 
 str(df)
 #Summary of dataframe
@@ -299,8 +299,104 @@ B<-ggMarginal(B, type="histogram",
            
 grid.arrange(A,B)
 ```
-### Average acreage per county, counties with single digit acreages have notes
+# Average acreage of WA counties over time
 ```{r}
+# Automate county level average for each county
+MuAcreageDf <- dta %>%
+  group_by(county_name) %>%
+  summarise('MuAcres' = mean(value, na.rm = TRUE)) %>%
+  dplyr::select(MuAcres, county_name) 
+#Subset county data
+WACountyData <- aggregate(dta[, "value"],
+                          by = list(dta$county_name),
+                          FUN = mean,
+                          na.rm = TRUE,
+                          data = dta)
+
+
+
+#Need to manually add in Garfield county with 0 acreage (not included on original dataframe, did not have any potato acreage listed)
+WACountyData[nrow(WACountyData) + 1,] = c("garfield","0")
+
+
+#Delete first row in WaCountyData that is blank in the county row and the average of all the counties in the other row and remove Other(combined)counties row
+WACountyData <- WACountyData[-c(1,25),]
+
+#Rename county column in WACountyData to "subregion" to match the map county column name and change the WACountyData counties to all lowercase to match the map dataframe so they can be joined
+colnames(WACountyData)[1] <- "subregion"
+
+WACountyData = as.data.frame(sapply(WACountyData, tolower))
+
+# Coerce Value to numeric
+as.numeric(as.character(dta$Value))
+class(dta)
+
+dta[county_name == "COLUMBIA",] # what does (D) mean?- Not enough farms to enable anonymity (pg.X in doc Y)
+```
+### WA county map
+```{r}
+states <- map_data("state")
+dim(states)
+ut_df <- subset(states, region == "washington")
+head(ut_df)
+
+counties <- map_data("county")
+ut_county <- subset(counties, region == "washington")
+head(ut_county)
+
+ut_base <- ggplot(data = ut_df, mapping = aes(x = long, y = lat, group = 
+group)) +
+coord_fixed(1.3) +
+geom_polygon(color = "black", fill = "gray")
+
+ut_base + theme_classic() +
+geom_polygon(data = ut_county, fill = NA, color = "white") +
+geom_polygon(color = "black", fill = NA)  # get the state border back on top
+
+#Joined county data, ut_county dataframe is map data for the counties in Washington state, WACountyData includes the average potato acreage for each county over time
+JoinedCounties <- inner_join(ut_county, WACountyData, by = "subregion")
+```
+
+### Graveyard
+- This code chunk does XYZ
+-This code gives a county map of WA, not using ggplot plot_usmap(regions = "counties", include = c("WA"))
+- Good example on how to color-code based on value ranges: 
+ scale_color_manual(name = "value",
+                     values = c("(-Inf,10]" = "red",
+                                  "(10,100]" = "yellow",
+                                  "(100, Inf]" = "black"),
+                     labels = c("Acreage <= 10", "10 < Acreage <= 100", "Acreage > 100"))
+```{r}
+df %>%
+  dplyr::select('AverageAcerage' = mean(acerage)) # package::function()
+```
+# Outlier plot
+  
+```{r}
+dta %>%
+  group_by(year) %>%
+  select(year, value, county_name) %>%
+  ggplot(aes(x=year, y=value)) +
+  geom_point(aes(colour = cut(value, c(-Inf, 10, 100, Inf))),
+             size = 1)+
+  scale_color_manual(name = "value",
+                     values = c("(-Inf,10]" = "red",
+                                  "(10,100]" = "yellow",
+                                  "(100, Inf]" = "black"),
+                     labels = c("Acreage <= 10", "10 < Acreage <= 100", "Acreage > 100")) +
+  theme_classic() +
+  theme(axis.title.x=element_text(size=16, face="bold"),
+        axis.text.x=element_text(size=14),
+        axis.title.y=element_text(size=16,face="bold"),
+        axis.text.y=element_text(size=14)) +
+  labs(x="Time (1882-2019)",
+       y="Acres") +
+  ggtitle("WA County Historic Potato Acreages") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  geom_smooth(method = "loess", span = 0.1, se = FALSE, color="grey40")+
+  theme(legend.position = "right")  
+
+### Average acreage per county, counties with single digit acreages have notes
 # Adams
 AdamsData <- subset(dta, county_name == 'ADAMS') 
 AdamsAverageAcreage <- mean(AdamsData$value, na.rm = TRUE)
@@ -474,106 +570,7 @@ YakimaAverageAcreage <- mean(YakimaData$value, na.rm = TRUE)
 # Other/unlisted
 OtherUnlistedData <- subset(dta, county_name == '')
 OtherUnlistedAverageAcreage <- mean(OtherUnlistedData$value, na.rm = TRUE)
-```
 
-```{r}
-# Automate county level average for each county
-MuAcreageDf <- dta %>%
-  group_by(county_name) %>%
-  summarise('MuAcres' = mean(value, na.rm = TRUE)) %>%
-  dplyr::select(MuAcres, county_name) 
-#Subset county data
-WACountyData <- aggregate(dta[, "value"],
-                          by = list(dta$county_name),
-                          FUN = mean,
-                          na.rm = TRUE,
-                          data = dta)
-
-
-###Above is not matching the hard coded WACountyMeans data, some county means match, some don't, some that had values in WaCountyMeans are returning NaN in WaCountyData
-
-#Need to manually add in Garfield county after Franklin county (not included on original dataframe, did not have any potato acreage listed)
-
-
-#Delete first row in WaCountyData that is blank in the county row and the average of all the counties in the other row
-WACountyData <- WACountyData[-c(1),]
-
-#Rename county column in WACountyData to "subregion" to match the map county column name and change the WACountyData counties to all lowercase to match the map dataframe so they can be joined
-colnames(WACountyData)[1] <- "subregion"
-
-WACountyData = as.data.frame(sapply(WACountyData, tolower))
-
-# Coerce Value to numeric
-as.numeric(as.character(dta$Value))
-class(dta)
-
-dta[county_name == "COLUMBIA",] # what does (D) mean?- Not enough farms to enable anonymity (pg.X in doc Y)
-```
 ### Dataframe of means
-```{r}
 WACountyMeans <- data.frame(AdamsAverageAcreage, AsotinAverageAcreage, BentonAverageAcreage, ChelanAverageAcreage, ClallamAverageAcreage, ClarkAverageAcreage, ColumbiaAverageAcreage, CowlitzAverageAcreage, DouglasAverageAcreage, FerryAverageAcreage, FranklinAverageAcreage, GrantAverageAcreage, GraysHarborAverageAcreage, IslandAverageAcreage, JeffersonAverageAcreage, KingAverageAcreage, KitsapAverageAcreage, KittitasAverageAcreage, KlickitatAverageAcreage, LewisAverageAcreage, LincolnAverageAcreage, MasonAverageAcreage, OkanoganAverageAcreage, PacificAverageAcreage, PendOreilleAverageAcreage, PierceAverageAcreage, SanJuanAverageAcreage, SkagitAverageAcreage, SkamaniaAverageAcreage, SnohomishAverageAcreage, SpokaneAverageAcreage, StevensAverageAcreage, ThurstonAverageAcreage, WahkiakumAverageAcreage, WallaWallaAverageAcreage, WhatcomAverageAcreage, WhitmanAverageAcreage, YakimaAverageAcreage, OtherUnlistedAverageAcreage)
-```
-### WA county map
-
-
-```{r}
-states <- map_data("state")
-dim(states)
-ut_df <- subset(states, region == "washington")
-head(ut_df)
-
-counties <- map_data("county")
-ut_county <- subset(counties, region == "washington")
-head(ut_county)
-
-ut_base <- ggplot(data = ut_df, mapping = aes(x = long, y = lat, group = 
-group)) +
-coord_fixed(1.3) +
-geom_polygon(color = "black", fill = "gray")
-
-ut_base + theme_classic() +
-geom_polygon(data = ut_county, fill = NA, color = "white") +
-geom_polygon(color = "black", fill = NA)  # get the state border back on top
-```
-
-
-### Graveyard
-- This code chunk does XYZ
--This code gives a county map of WA, not using ggplot plot_usmap(regions = "counties", include = c("WA"))
-- Good example on how to color-code based on value ranges: 
- scale_color_manual(name = "value",
-                     values = c("(-Inf,10]" = "red",
-                                  "(10,100]" = "yellow",
-                                  "(100, Inf]" = "black"),
-                     labels = c("Acreage <= 10", "10 < Acreage <= 100", "Acreage > 100"))
-```{r}
-df %>%
-  dplyr::select('AverageAcerage' = mean(acerage)) # package::function()
-```
-
-# Outlier plot
-  
-```{r}
-dta %>%
-  group_by(year) %>%
-  select(year, value, county_name) %>%
-  ggplot(aes(x=year, y=value)) +
-  geom_point(aes(colour = cut(value, c(-Inf, 10, 100, Inf))),
-             size = 1)+
-  scale_color_manual(name = "value",
-                     values = c("(-Inf,10]" = "red",
-                                  "(10,100]" = "yellow",
-                                  "(100, Inf]" = "black"),
-                     labels = c("Acreage <= 10", "10 < Acreage <= 100", "Acreage > 100")) +
-  theme_classic() +
-  theme(axis.title.x=element_text(size=16, face="bold"),
-        axis.text.x=element_text(size=14),
-        axis.title.y=element_text(size=16,face="bold"),
-        axis.text.y=element_text(size=14)) +
-  labs(x="Time (1882-2019)",
-       y="Acres") +
-  ggtitle("WA County Historic Potato Acreages") +
-  theme(plot.title = element_text(hjust = 0.5)) +
-  geom_smooth(method = "loess", span = 0.1, se = FALSE, color="grey40")+
-  theme(legend.position = "right")  
 ```
