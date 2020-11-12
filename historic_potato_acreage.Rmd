@@ -306,35 +306,31 @@ MuAcreageDf <- dta %>%
   group_by(county_name) %>%
   summarise('MuAcres' = mean(value, na.rm = TRUE)) %>%
   dplyr::select(MuAcres, county_name) 
-#Subset county data
-WACountyData <- aggregate(dta[, "value"],
-                          by = list(dta$county_name),
-                          FUN = mean,
-                          na.rm = TRUE,
-                          data = dta)
-
-
 
 #Need to manually add in Garfield county with 0 acreage (not included on original dataframe, did not have any potato acreage listed)
-WACountyData[nrow(WACountyData) + 1,] = c("garfield","0")
+MuAcreageDf[nrow(MuAcreageDf) + 1,] = list(0, "garfield")
 
 
-#Delete first row in WaCountyData that is blank in the county row and the average of all the counties in the other row and remove Other(combined)counties row
-WACountyData <- WACountyData[-c(1,25),]
+#Delete first row in MuAcreageDf that is blank in the county row and the average of all the counties in the other row and remove Other(combined)counties row
+MuAcreageDf <- MuAcreageDf[-c(1,25),]
 
-#Rename county column in WACountyData to "subregion" to match the map county column name and change the WACountyData counties to all lowercase to match the map dataframe so they can be joined
-colnames(WACountyData)[1] <- "subregion"
+#Rename county column in MuAcreageDf to "subregion" to match the map county column name and change the MuAcreageDf counties to all lowercase to match the map dataframe so they can be joined
+colnames(MuAcreageDf)[2] <- "subregion"
 
-WACountyData = as.data.frame(sapply(WACountyData, tolower))
+MuAcreageDf$subregion <- tolower(MuAcreageDf$subregion)
+
+#Round MuAcres to a whole number
+MuAcreageDf[,-2] <- round(MuAcreageDf[,-2],0)
 
 # Coerce Value to numeric
 as.numeric(as.character(dta$Value))
 class(dta)
 
-dta[county_name == "COLUMBIA",] # what does (D) mean?- Not enough farms to enable anonymity (pg.X in doc Y)
+dta[county_name == "COLUMBIA",] # what does (D) mean?- Not enough farms to enable anonymity (pg.X in doc Y)#Need to manually add in Garfield county with 0 acreage (not included on original dataframe, did not have any potato acreage listed)
 ```
 ### WA county map
 ```{r}
+# Base WA county map
 states <- map_data("state")
 dim(states)
 ut_df <- subset(states, region == "washington")
@@ -357,8 +353,18 @@ ut_base + theme_classic() +
 geom_polygon(data = ut_county, fill = NA, color = "white") +
 geom_polygon(color = "black", fill = NA)  # get the state border back on top
 
-#Joined county data, ut_county dataframe is map data for the counties in Washington state, WACountyData includes the average potato acreage for each county over time
-JoinedCounties <- inner_join(ut_county, WACountyData, by = "subregion")
+#Joined county data, ut_county dataframe is map data for the counties in Washington state, MuAcreageDf includes the average potato acreage for each county over time
+JoinedCounties <- inner_join(ut_county, MuAcreageDf, by = "subregion")
+
+# WA county map with joined data. Color gradient based on MuAcres column
+MuAcreagePlot <- ggplot() + 
+  geom_polygon(data=JoinedCounties ,
+               aes(x=long, y=lat, group=group,
+               fill=MuAcres),
+                color="black", lwd=0.3) +
+  scale_fill_gradient(low="blue", high="red") +
+  theme_classic() + coord_map("conic", lat0 = 30) +
+  ggtitle("WA County Historic Potato Acreage Averages 1882-2019")
 ```
 
 ### Graveyard
