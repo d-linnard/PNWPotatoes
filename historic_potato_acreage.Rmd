@@ -3,6 +3,7 @@ title: "Historic potato acreage WA"
 author: "Hannah Tarlyn"
 date: "9/19/2020"
 output: html_document
+R version: R-4.0.2
 ---
 ### Load libraries
 ```{r}
@@ -325,7 +326,7 @@ MuAcreageDf[,-2] <- round(MuAcreageDf[,-2],0)
 as.numeric(as.character(dta$Value))
 class(dta)
 
-dta[county_name == "COLUMBIA",] # what does (D) mean?- Not enough farms to enable anonymity (pg.X in doc Y)#Need to manually add in Garfield county with 0 acreage (not included on original dataframe, did not have any potato acreage listed)
+dta[county_name == "COLUMBIA",] # what does (D) mean?- Not enough farms to enable anonymity (pg.X in doc Y)
 ```
 ### WA county map
 ```{r}
@@ -365,7 +366,17 @@ MuAcreagePlot <- ggplot() +
   theme_classic() + coord_map("conic", lat0 = 30) +
   ggtitle("WA County Historic Potato Acreage Averages 1882-2019")
 ```
-
+```{r}
+# For loop gather for mapping multiple individual years of data
+## Notes: Collect an acreage point for each county for each year available. Have all the points for a single year plotted onto the county map. Use same color gradient as average acreage plot. Gather and for loops can automate this process for each year.
+## Sample of a few years, hardcoded just to see what we're working with
+Data1882 <- dta%>%
+  subset(year==1882) #No specific counties listed
+Data2019 <- dta %>%
+  subset(year==2019)#No specific counties listed
+Data2017 <- dta %>% 
+  subset(year==2017) #Multiple acreages listed for the same county (same county, same year, different acreages, may just be different regions within the county). Check sector_desc, domain_desc, util_practice_desc, short_desc
+  ```
 ### Graveyard
 - This code chunk does XYZ
 -This code gives a county map of WA, not using ggplot plot_usmap(regions = "counties", include = c("WA"))
