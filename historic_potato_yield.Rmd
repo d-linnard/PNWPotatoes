@@ -1,15 +1,10 @@
 ---
-title: "Washington State Potato Yields Over Time"
+title: "Historic potato yield WA"
 author: "El Nazarov"
 date: "9/16/2020"
 output: html_document
 ---
-
-  
-
 #### Resource: https://docs.ropensci.org/rnassqs/  
-</br>  
-
 ##### Load libraries.  
 ```{r message=FALSE, warning=FALSE}
 library(rnassqs) # For harvest yield data
@@ -18,54 +13,142 @@ library(dplyr)
 library(ggplot2)
 library(data.table)
 ```  
-</br>  
-
 ##### Set API key. 
 API key: 603EE21B-9682-3233-8C15-260C6E388A51
 ```{r}
 nassqs_auth(key = '603EE21B-9682-3233-8C15-260C6E388A51')
-# I have yet to determine how to go about hiding the API key in the script itself.
+# need to conceal API key?
 ```
-</br>  
-
 ##### Define search parameters.
-```{r}
+```{r setup, include=FALSE}
 nassqs_params()
 ```
-</br>
-
 ##### Define search parameters: potato yield data from Washington state
+#### Sanity check: Gather potato data for year 1950 in Washington
 ```{r}
-# Parameters to query on the data call
-params <- list(commodity_desc = "potatoes", # We are looking at data on potatoes
-               state_alpha = "wa") # We are looking for data from only Washington State
-```
-</br>
+params <- list(commodity_desc = "potatoes", year = 1950, state_alpha = "WA")
 
-#### Harvest potato yield data from Washington state
-```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
+nassqs(params)
+```
+## Yield
+```{r}
 nassqs_yields(params) 
 ```
-</br>
+### Collect data from multiple years
+## Define new dataframe of potato yield data in WA
+```{r}
+param_list <- list(commodity_desc = "potatoes", state_alpha = "WA")
+```
+### Acreage, iterate through each year to get data
+```{r}
+data_list <- lapply(1882:2019, function(yr) {
+  params <- param_list
+  params[['year']] <- yr
+  nassqs_yields(params)
+})
+```
+#### Using dplyr to bind the data list
+```{r}
+dta <- rbindlist(data_list, use.names = TRUE)
+```
+### Inspect data structure and features
+#### Check that our record request is under the 50,000 limit
+```{r setup, include=FALSE}
+dim(dta) 
+table(dta$year)
+str(dta)
+```
+### Summary statistics
+```{r setup, include=FALSE}
+class(dta$Value)
+dta$Value
+```
+### Coerce value into a number
+```{r setup, include=FALSE, warning=F}
+dta$value <- as.numeric(gsub(",", "", dta$Value))
+dta$value
+summary(as.numeric(dta$value))
+lapply(dta, unique)
+```
+### Plot
+#### Set plot size
+```{r}
+options(repr.plot.width = 20, repr.plot.height = 10)
+```
+#### Create plot
+```{r}
+dta %>%
+  group_by(year) %>%
+  select(year, value, county_name) %>%
+  ggplot(aes(x=year, y=value)) +
+  geom_jitter(aes(colour = county_name), size=5, alpha=3/5) +
+  theme_classic() +
+  theme(axis.title.x=element_text(size=16, face="bold"),
+        axis.text.x=element_text(size=14),
+        axis.title.y=element_text(size=16,face="bold"),
+        axis.text.y=element_text(size=14)) +
+  scale_color_hue(l=70, c=40) +
+  labs(x="Time (1882-2019)",
+       y="Yield") +
+  geom_smooth(method = "loess", span = 0.1, se = FALSE, color="grey40")
+```
+## Map Data
+### Install and load packages
+```{r}
+library("rnaturalearth")
+library("rnaturalearthdata")
+library("ggplot2")
+library("rworldmap")
+library(dplyr)
+library(geosphere)
+library(gpclib)
+library(tidyverse)
+library(mapdata)
+library(raster)
+library(geojsonio)
+library(usmap)
+```
+## World Map
+#### Map of US with several states outlined as a trial/practice map
+```{r}
+worldMap <- getMap()
+world.points <- fortify(worldMap)
+world.points$region <- world.points$id
+states <- map_data("state")
+states = states %>%
+  filter(region %in% c("montana", "california","washington","pennsylvania"))#
 
-## Define new dataframe  of potato yield data in WA
-```{r include=FALSE}
+world.df <- world.points[,c("long","lat","group", "region")]
+
+p = worldmap <- ggplot() + 
+  geom_polygon(data = world.df, aes(x = long, y = lat, group = group),
+               color="grey", fill="grey") +
+  geom_polygon(data = states, aes(x = long, y = lat, group = group),
+               color="black", fill="grey", lwd=0.35) +
+  scale_y_continuous(breaks = (-2:2) * 30) +
+  scale_x_continuous(breaks = (-4:4) * 45) +
+  coord_map("ortho", orientation=c(40, -90, 0))
+
+```
+
+
+
+
+
+
+######This is old code. 
+--------------------------------------------------------------------------------
+```{r}
 yield_df <- nassqs_yields(params) #define the data frame to a variable
 ```
-</br>
-
 ## From here, a narrower selection of data can begin (sanity check). 
 ```{r}
 str(yield_df) #find desired parameters within data frame
 ```
-</br>
-
 #### Sanity check: confirm that the desired time frame was collected. And establish time frame from which data will be collected.
 ```{r}
 plot(table(yield_df$year)) #This shows that there is at least 1 entry for each year the data is available, 1882-2019.
 ```
-</br>
-
 #### Select/subset desired parameters/columns.  
 Choose from options listed in the structure.
 ```{r}
@@ -77,20 +160,14 @@ yield <- yield_df %>% select(Value,
                              unit_desc,
                              statisticcat_desc) 
 ```
-</br>
-
 #### Sanity check: determine class of the value. clean up the new data frame.
 ```{r}
 class(yield$Value)
 ```
-</br>
-
 ### Sanity check
 ```{r}
 head(yield$Value) #Head will show only the first 5 entries.
 ```
-</br>
-
 ### Coerce "Value" vector from character to number.
 ```{r}
 yield$ValueInteger = as.integer(yield$Value) 
@@ -98,14 +175,10 @@ yield$ValueInteger = as.integer(yield$Value)
 head(yield)
 plot(yield$value, yield$ValueInteger) # error x and y differ in lengths
 ```
-</br>
-
 #### Summary
 ```{r}
 summary(yield$value)
 ```
-</br>
-
 #### Plot
 ```{r}
 options(repr.plot.width = 20, repr.plot.height = 10) # Plot size
@@ -124,4 +197,9 @@ scale_color_hue(l=70, c=40) +
 labs(x="Time (1882-2019)",
     y="Yield (CWT/acre)")  +
 geom_smooth(method = "loess", span = 0.1, se = FALSE, color="grey40")
+```
+
+####Boneyard
+```{r}
+
 ```

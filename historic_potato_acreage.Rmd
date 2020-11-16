@@ -90,7 +90,6 @@ dta %>%
        y="Acres") +
   geom_smooth(method = "loess", span = 0.1, se = FALSE, color="grey40")
 ```
-
 ## Map Data
 ### Install and load packages
 ```{r}
