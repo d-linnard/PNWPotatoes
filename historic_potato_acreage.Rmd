@@ -229,75 +229,6 @@ is.na(df)
 ### Open map data
 ```{r message=F, warning=F, fig.cap="Potato acreage in Washington state over time", echo=FALSE}
 MainStates <- map_data("state")
-
-### Add new columns for potato acerage over time, subset of dta dataframe. Select columns for value (acreage), state_name (Washington), year and county_name. (Check back:Mutate to create new column called region.There are 2913 rows of data.)
-
-Statesdf <- dta[ , c("value", "state_name", "year", "county_name")]%>%
-  mutate("region" = rep(unique(MainStates$region)[2913],
-                       each=1))
-
-### Plot acreage(value) by year, need add color. Log(value)?
-
-ggplot(Statesdf, aes(x=year, y=value)) +
-  geom_line() + geom_point(size=0.05, alpha=0.5) +
-  facet_wrap(~region) + 
-  theme_classic() +
-  theme(legend.position="none",
-      axis.text.y=element_text(size=4),
-      axis.text.x=element_text(size=4, angle = 90))
-```
-### WA county map plotting as histogram
-```{r message=F, warning=F, fig.cap="A: Histogram of potato acreage in Washington state over time. Each color represents a different county. B: Distribution of acreage", echo=FALSE}
-State.Mu.TF <- Statesdf %>%
-  group_by(region) %>%
-  summarise(TF.mu=mean(value))
-### Rename region column
-names(State.Mu.TF)[1] <- "region"
-### Join acreage data with map data
-JoinedStates <- inner_join(MainStates, 
-                           State.Mu.TF,
-                           by = "region")
-### Plots
-A <- ggplot() + 
-  geom_polygon(data=JoinedStates ,
-               aes(x=long, y=lat, group=group,
-               fill=TF.mu),
-                color="black", lwd=0.3) +
-  scale_fill_gradient(low="blue", high="red") +
-  theme_classic() + coord_map("conic", lat0 = 30) + 
-  labs(title="A",fill=expression("Potato acreage in Washington state over time"),size=2) +
-  theme(axis.line=element_blank(),
-        axis.text.x=element_blank(),
-        axis.text.y=element_blank(),
-        axis.ticks=element_blank(),
-        axis.title.x=element_blank(),
-        axis.title.y=element_blank(),
-        legend.position="right",
-        panel.background=element_blank(),
-        panel.border=element_blank(),
-        panel.grid.major=element_blank(),
-        panel.grid.minor=element_blank(),
-        plot.background=element_blank())+
-  theme(legend.title=element_text(size=5))
-
-B <- ggplot(Statesdf, aes(x=factor(year), y=value),
-        group=year) +
-  geom_boxplot(color="grey60", outlier.colour = "grey60") +
-  geom_jitter(alpha=0.4,color="grey60",
-              position=position_jitter(width=0.1)) +
-  geom_smooth(method = "loess", se=F, 
-              aes(group=1), span=0.1, color="orangered", alpha=0.7) +
-  labs(title="B", y=expression("Potato acreage in Washington state over time"), x="Time (1882-2019)") +
-  theme_classic() + 
-  theme(legend.position="none",
-        axis.title.y=element_text(size=8),
-        axis.text.x = element_text(angle = 90))
-B<-ggMarginal(B, type="histogram",
-           margins = "y",
-           col="gray",
-           fill = "grey83")
-           
-grid.arrange(A,B)
 ```
 # Average acreage of WA counties over time
 ```{r}
@@ -365,7 +296,47 @@ MuAcreagePlot <- ggplot() +
   scale_fill_gradient(low="blue", high="red") +
   theme_classic() + coord_map("conic", lat0 = 30) +
   ggtitle("WA County Historic Potato Acreage Averages 1882-2019")
+
+#Add surrounding states and provinces to WA map
+us <- getData("GADM",country="USA",level=1)
+canada <- getData("GADM",country="CAN",level=1)
+states <- c('Idaho', 'Oregon')
+provinces <- c("British Columbia", "Alberta")
+# PNW
+us.states <- us[us$NAME_1 %in% states,]
+# Canada
+ca.provinces <- canada[canada$NAME_1 %in% provinces,]
+#WA average map with surrounding states and provinces
+PNWAcreage <- ggplot(us.states,
+       aes(x=long, y=lat, group=group))+
+  geom_path(size=0.25)+
+  geom_path(data=ca.provinces, size=0.25,color="grey60")+
+  geom_polygon(data=subset(us.states, NAME_1 %in% c('Idaho', 'Oregon')),
+               aes(x=long, y=lat, group=group), fill="white", colour = "grey50", size=0.50)+ 
+ geom_polygon(data=JoinedCounties, #Start of MuAcreagePlot
+               aes(x=long, y=lat, group=group,
+               fill=MuAcres),
+                color="black", lwd=0.3) +
+  scale_fill_gradient(low="blue", high="red") +
+  theme_classic() + coord_map("conic", lat0 = 30) +
+  ggtitle("WA County Historic Potato Acreage Averages 1882-2019") + 
+  labs(fill = "Average Acreage")+
+  labs(caption = "Counties shown in grey were not included in NASS dataset to protect farm anonymity.") +
+  theme(plot.caption = element_text(hjust = 0))+ #End of MuAcreagePlot
+  theme(panel.background = element_rect(fill = "white", colour = "grey50"))+
+ coord_map("bonne", lat0 = 50,
+            xlim = c(-127, -112),ylim = c(41, 50))+
+  xlab("Longitude") +
+  ylab("Latitude") 
 ```
+```{r}
+#Gathered yearly acreage data
+
+##Create new dataframe that only includes the county, year and acreage (value), columns from the original dta dataframe
+HistoricAcreage <- dta %>%
+  dplyr::select(county_name, year, value) #Many instances of years with acreage values but no county listed. Sometimes the same year has more than one acreage listed. Sometimes these repeated years have the same acreage, sometimes it is different.
+```
+
 ```{r}
 # For loop gather for mapping multiple individual years of data
 ## Notes: Collect an acreage point for each county for each year available. Have all the points for a single year plotted onto the county map. Use same color gradient as average acreage plot. Gather and for loops can automate this process for each year.
