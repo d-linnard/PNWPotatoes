@@ -337,8 +337,11 @@ HistoricAcreage <- dta %>%
   dplyr::select(county_name, year, value) #Many instances of years with acreage values but no county listed. Sometimes the same year has more than one acreage listed. Sometimes these repeated years have the same acreage, sometimes it is different.
 
 #Still need help on this
+
 GatheredData <- GatheredData <- gather(HistoricAcreage, year, value, -county_name)
- 
+# This is long data, does it need to be wide? Issue with converting from long to wide with spread(), I think due to each county sometimes having the same year listed more than once (examples show show things like counties associated with only one year.)
+
+
 ```
 ```{r}
 #Extracted county acreages
