@@ -79,8 +79,8 @@ options(repr.plot.width = 20, repr.plot.height = 10)
 ```{r}
 dta %>%
   group_by(year) %>%
-  select(year, value, county_name) %>%
-  ggplot(aes(x=year, y=value)) +
+  select(year, Value, county_name) %>%
+  ggplot(aes(x=year, y=Value)) +
   geom_jitter(aes(colour = county_name), size=5, alpha=3/5) +
   theme_classic() +
   theme(axis.title.x=element_text(size=16, face="bold"),
@@ -95,40 +95,28 @@ dta %>%
 ## Map Data
 ### Install and load packages
 ```{r}
-library("rnaturalearth")
-library("rnaturalearthdata")
-library("ggplot2")
-library("rworldmap")
-library(dplyr)
-library(geosphere)
-library(gpclib)
-library(tidyverse)
-library(mapdata)
-library(raster)
-library(geojsonio)
-library(usmap)
+library(cartography)
+library(sf)
 ```
-## World Map
-#### Map of US with several states outlined as a trial/practice map
+
+#### Map of Washington with counties
 ```{r}
-worldMap <- getMap()
-world.points <- fortify(worldMap)
-world.points$region <- world.points$id
-states <- map_data("state")
-states = states %>%
-  filter(region %in% c("montana", "california","washington","pennsylvania"))#
-
-world.df <- world.points[,c("long","lat","group", "region")]
-
-p = worldmap <- ggplot() + 
-  geom_polygon(data = world.df, aes(x = long, y = lat, group = group),
-               color="grey", fill="grey") +
-  geom_polygon(data = states, aes(x = long, y = lat, group = group),
-               color="black", fill="grey", lwd=0.35) +
-  scale_y_continuous(breaks = (-2:2) * 30) +
-  scale_x_continuous(breaks = (-4:4) * 45) +
-  coord_map("ortho", orientation=c(40, -90, 0))
-
+wa_geojson <- "https://opendata.arcgis.com/datasets/12712f465fc44fb58328c6e0255ca27e_11.geojson"
+wa_count_raw <- sf::read_sf(wa_geojson)
+plot(st_geometry(wa_count_raw))
+```
+##Sanity check: map feature data
+```{r}
+head(wa_count_raw)
+```
+###Clean geospatial dataframe
+```{r}
+wa_counties <- wa_count_raw %>% 
+  dplyr::transmute(
+    OBJECTID,
+    MAP_NAME = JURISDICT_LABEL_NM, 
+    COUNTY = toupper(JURISDICT_LABEL_NM) 
+    )
 ```
 
 
@@ -136,68 +124,18 @@ p = worldmap <- ggplot() +
 
 
 
-######This is old code. 
---------------------------------------------------------------------------------
-```{r}
-yield_df <- nassqs_yields(params) #define the data frame to a variable
-```
-## From here, a narrower selection of data can begin (sanity check). 
-```{r}
-str(yield_df) #find desired parameters within data frame
-```
-#### Sanity check: confirm that the desired time frame was collected. And establish time frame from which data will be collected.
-```{r}
-plot(table(yield_df$year)) #This shows that there is at least 1 entry for each year the data is available, 1882-2019.
-```
-#### Select/subset desired parameters/columns.  
-Choose from options listed in the structure.
-```{r}
-yield <- yield_df %>% select(Value, 
-                             commodity_desc, 
-                             county_name,
-                             year, 
-                             state_alpha,
-                             unit_desc,
-                             statisticcat_desc) 
-```
-#### Sanity check: determine class of the value. clean up the new data frame.
-```{r}
-class(yield$Value)
-```
-### Sanity check
-```{r}
-head(yield$Value) #Head will show only the first 5 entries.
-```
-### Coerce "Value" vector from character to number.
-```{r}
-yield$ValueInteger = as.integer(yield$Value) 
-# Sanity check
-head(yield)
-plot(yield$value, yield$ValueInteger) # error x and y differ in lengths
-```
-#### Summary
-```{r}
-summary(yield$value)
-```
-#### Plot
-```{r}
-options(repr.plot.width = 20, repr.plot.height = 10) # Plot size
 
-yield %>%
-group_by(year) %>%
-select(year, value, county_name) %>%
-ggplot(aes(x=year, y=value)) +
-geom_jitter(aes(colour = county_name), size=5, alpha=3/5) +
-theme_classic() + 
-theme(axis.title.x=element_text(size=16, face="bold"),
-      axis.text.x=element_text(size=14),
-      axis.title.y=element_text(size=16,face="bold"),
-      axis.text.y=element_text(size=14)) +
-scale_color_hue(l=70, c=40) +
-labs(x="Time (1882-2019)",
-    y="Yield (CWT/acre)")  +
-geom_smooth(method = "loess", span = 0.1, se = FALSE, color="grey40")
-```
+
+
+
+
+
+
+
+
+
+
+
 
 ####Boneyard
 ```{r}
