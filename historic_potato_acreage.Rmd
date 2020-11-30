@@ -337,10 +337,7 @@ HistoricAcreage <- dta %>%
   dplyr::select(county_name, year, value) #Many instances of years with acreage values but no county listed. Sometimes the same year has more than one acreage listed. Sometimes these repeated years have the same acreage, sometimes it is different.
 
 #Still need help on this
-GatheredData <- HistoricAcreage %>%
-  gather("county_name", "year") %>%
-  mutate(county_name = factor(county_name,
-                              levels = c('ADAMS', 'ASOTIN', 'BENTON', 'CHELAN', 'CLALLAM', 'CLARK', 'COLUMBIA', 'COWLITZ', 'DOUGLAS', 'FERRY', 'FRANKLIN', 'GRANT', 'GRAYS HARBOR', 'ISLAND', 'JEFFERSON', 'KING', 'KITSAP', 'KITTITAS', 'KLICKITAT', 'LEWIS', 'LINCOLN', 'MASON', 'OKANOGAN', 'PACIFIC', 'PEND OREILLE', 'PIERCE', 'SAN JUAN', 'SKAGIT', 'SKAMANIA', 'SNOHOMISH', 'SPOKANE', 'STEVENS', 'THURSTON', 'WAHKIAKUM', 'WALLA WALLA', 'WHATCOM', 'WHITMAN', 'YAKIMA')))
+GatheredData <- GatheredData <- gather(HistoricAcreage, year, value, -county_name)
  
 ```
 ```{r}
