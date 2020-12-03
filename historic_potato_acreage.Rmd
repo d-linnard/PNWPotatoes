@@ -264,14 +264,14 @@ dta[county_name == "COLUMBIA",] # what does (D) mean?- Not enough farms to enabl
 # Base WA county map
 states <- map_data("state")
 dim(states)
-ut_df <- subset(states, region == "washington")
-head(ut_df)
+wa_df <- subset(states, region == "washington")
+head(wa_df)
 
 counties <- map_data("county")
-ut_county <- subset(counties, region == "washington")
-head(ut_county)
+wa_county <- subset(counties, region == "washington")
+head(wa_county)
 
-ut_base <- ggplot(data = ut_df,
+wa_base <- ggplot(data = ut_df,
                   mapping = aes(x = long,
                                 y = lat,
                                 group = 
@@ -280,12 +280,12 @@ fill = subregion)) +
 coord_fixed(1.3) +
 geom_polygon(color = "black", fill = "gray")
 
-ut_base + theme_classic() +
-geom_polygon(data = ut_county, fill = NA, color = "white") +
+wa_base + theme_classic() +
+geom_polygon(data = wa_county, fill = NA, color = "white") +
 geom_polygon(color = "black", fill = NA)  # get the state border back on top
 
 #Joined county data, ut_county dataframe is map data for the counties in Washington state, MuAcreageDf includes the average potato acreage for each county over time
-JoinedCounties <- inner_join(ut_county, MuAcreageDf, by = "subregion")
+JoinedCounties <- inner_join(wa_county, MuAcreageDf, by = "subregion")
 
 # WA county map with joined data. Color gradient based on MuAcres column
 MuAcreagePlot <- ggplot() + 
