@@ -271,7 +271,7 @@ counties <- map_data("county")
 wa_county <- subset(counties, region == "washington")
 head(wa_county)
 
-wa_base <- ggplot(data = ut_df,
+wa_base <- ggplot(data = wa_df,
                   mapping = aes(x = long,
                                 y = lat,
                                 group = 
@@ -284,7 +284,7 @@ wa_base + theme_classic() +
 geom_polygon(data = wa_county, fill = NA, color = "white") +
 geom_polygon(color = "black", fill = NA)  # get the state border back on top
 
-#Joined county data, ut_county dataframe is map data for the counties in Washington state, MuAcreageDf includes the average potato acreage for each county over time
+#Joined county data, wa_county dataframe is map data for the counties in Washington state, MuAcreageDf includes the average potato acreage for each county over time
 JoinedCounties <- inner_join(wa_county, MuAcreageDf, by = "subregion")
 
 # WA county map with joined data. Color gradient based on MuAcres column
@@ -330,16 +330,95 @@ PNWAcreage <- ggplot(us.states,
   ylab("Latitude") 
 ```
 ```{r}
-#Gathered yearly acreage data
+# Reading in potato acreage data from NASS from 1965-2015 and selecting year, county and value (acreage)
+ShortHistoricAcreageCSV <- read.csv(file = 'HistoricPotatoData.csv')
 
-##Create new dataframe that only includes the county, year and acreage (value), columns from the original dta dataframe
-HistoricAcreage <- dta %>%
-  dplyr::select(county_name, year, value) #Many instances of years with acreage values but no county listed. Sometimes the same year has more than one acreage listed. Sometimes these repeated years have the same acreage, sometimes it is different.
+ShortHistoricAcreage <- dplyr::select(ShortHistoricAcreageCSV, "County", "Year", "Value") 
+# Delete rows that are for combined counties
+ShortHistoricAcreage <- ShortHistoricAcreage[!grepl("COMBINED",ShortHistoricAcreage$County),]
 
-#Still need help on this
+#Coerce Value column from character to numeric
+ShortHistoricAcreage$Value = as.numeric(gsub(",", "", ShortHistoricAcreage$Value))
+ShortHistoricAcreage$Value
+summary(as.numeric(ShortHistoricAcreage$Value))
+lapply(ShortHistoricAcreage, unique)
 
-GatheredData <- GatheredData <- gather(HistoricAcreage, year, value, -county_name)
-# This is long data, does it need to be wide? Issue with converting from long to wide with spread(), I think due to each county sometimes having the same year listed more than once (examples show show things like counties associated with only one year.)
+#Rename county column in ShortHistoricAcreage to "subregion" to match the map county column name and change the ShortHistoricAcreage counties to all lowercase to match the map dataframe so they can be joined
+colnames(ShortHistoricAcreage)[1] <- "subregion"
+
+ShortHistoricAcreage$subregion <- tolower(ShortHistoricAcreage$subregion) 
+
+# Adding counties not included in the NASS data set so they will be included on the map, but without any acreage associated with them: Asotin, Chelan, Clallam, Columbia, Ferry, Garfield, Jefferson, Mason, Pacific, Pend Oreille, San Juan, Skamania, Wahkiakum. A single year with NA listed so the rows will add correctly (dummy variable)
+ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("asotin", 1965, NA)
+ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("chelan", 1965, NA)
+ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("clallam", 1965, NA)
+ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("columbia", 1965, NA)
+ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("ferry", 1965, NA)
+ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("garfield", 1965, NA)
+ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("jefferson", 1965, NA)
+ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("mason", 1965, NA)
+ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("pacific", 1965, NA)
+ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("pend oreille", 1965, NA)
+ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("san juan", 1965, NA)
+ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("skamania", 1965, NA)
+ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("wahkiakum", 1965, NA)
+
+#Spreading data, making long data wide so we can make an acreage map for each year
+SpreadAcreage <- spread(ShortHistoricAcreage, Year,Value)
+
+#Joined county data, wa_county dataframe is map data for the counties in Washington state, SpreadAcreage includes the  potato acreage for each county over time
+JoinedSpreadCounties <- inner_join(wa_county, SpreadAcreage, by = "subregion")
+
+# Renamed column names for the year data so they can be used to fill the color gradient for the maps 
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1965 = 7)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1966 = 8)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1967 = 9)
+
+
+# WA county map with joined data. Color gradient based on 1965 data column
+Acreage1965 <- ggplot() + 
+  geom_polygon(data=JoinedSpreadCounties ,
+               aes(x=long, y=lat, group=group,
+               fill=Acreage1965),
+                color="black", lwd=0.3) +
+  scale_fill_gradient(low="blue", high="red") +
+  theme_classic() + coord_map("conic", lat0 = 30) +
+  ggtitle("WA County Potato Acreage 1965")
+
+#Add surrounding states and provinces to WA map
+us <- getData("GADM",country="USA",level=1)
+canada <- getData("GADM",country="CAN",level=1)
+states <- c('Idaho', 'Oregon', 'California', 'Utah', 'Montana', 'Nevada', 'Wyoming')
+provinces <- c("British Columbia", "Alberta")
+# PNW
+us.states <- us[us$NAME_1 %in% states,]
+# Canada
+ca.provinces <- canada[canada$NAME_1 %in% provinces,]
+#WA 1965 map with surrounding states and provinces
+PNWAcreage1965 <- ggplot(us.states,
+       aes(x=long, y=lat, group=group))+
+  geom_path(size=0.25)+
+  geom_path(data=ca.provinces, size=0.25,color="grey60")+
+  geom_polygon(data=subset(us.states, NAME_1 %in% c('Idaho', 'Oregon', 'California', 'Utah', 'Montana', 'Nevada', 'Wyoming' )),
+               aes(x=long, y=lat, group=group), fill="white", colour = "grey50", size=0.50)+ 
+ geom_polygon(data=JoinedSpreadCounties ,
+               aes(x=long, y=lat, group=group,
+               fill=Acreage1965),
+                color="black", lwd=0.3) +
+  scale_fill_gradient(low="blue", high="red") +
+  theme_classic() + coord_map("conic", lat0 = 30) +
+  ggtitle("WA County Potato Acreage 1965") + 
+  labs(fill = "Acreage")+
+  labs(caption = "Counties shown in grey did not report any potato acreage for the year or were not included in the NASS data set.") +
+  theme(plot.caption = element_text(hjust = 0))+ 
+  theme(panel.background = element_rect(fill = "white", colour = "grey50"))+
+ coord_map("bonne", lat0 = 50,
+            xlim = c(-125, -116),ylim = c(45, 50))+
+  xlab("Longitude") +
+  ylab("Latitude")
 
 
 ```
