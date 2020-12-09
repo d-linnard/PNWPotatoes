@@ -1,0 +1,1547 @@
+---
+title: "Does 10 minutes of meditation affect ones ability to differentiate real versus fake news"
+author: "Hien Nguyen, Mark Hu, and David Linnard Wheeler"
+output:
+  github_document: default
+  pdf_document: default
+knit: (function(inputFile, encoding) {
+  rmarkdown::render(inputFile, encoding = encoding,, output_format = "all") })  
+---
+
+### Load libraries
+```{r message=FALSE}
+# load packages 
+library(data.table)
+library(knitr)
+library(lmtest)
+library(sandwich)
+library(AER)
+library(GGally)
+library(gridExtra)
+library(Hmisc)
+library(dplyr)
+library(RCurl)
+library(naniar)
+library(stargazer)
+```
+
+## Import data
+```{r}
+require(RCurl)
+link <- "https://docs.google.com/spreadsheets/d/e/2PACX-1vRDKwYk7yhJFd3AVim-tku0Li_g6Gz38EbJF6bnsWNYhl40b2v07n5MMEm0VkFthdkv2ZSf0EsntwBq/pub?gid=1748534570&single=true&output=csv"
+url <- getURL(link)
+con <- textConnection( url )
+d <- read.csv( con )
+```
+
+### Convert dataframe to datatable
+```{r}
+# Dataframe
+head(d)
+# As datatable
+setDT(d)
+# Confirm
+class(d)
+# Add column with ID
+d$ID <- seq.int(nrow(d))
+```
+
+
+## Data wrangling
+### Summary statistics
+```{r}
+# Dimensions
+dim(d)
+# Structure
+str(d)
+# Summary
+summary(d)
+# Unique values
+lapply(d, unique)
+```
+### Visualize missing data
+```{r}
+# All missing data
+vis_miss(d)
+# 
+#gg_miss_upset(d, nintersects = NA)
+```
+
+### Remove test runs & survey previews
+```{r}
+# Search for "test"
+d_Processed = d[!grepl("test", EmailAddress ,ignore.case=TRUE), ]
+
+# Search for survey preview
+d_Processed = d_Processed[!grepl("Survey Preview", ResponseType,
+                                 ignore.case=TRUE), ]
+# Dimensions
+dim(d_Processed)
+
+# Number of respondents from phase I
+sum(is.na(d_Processed$mTurk))
+# Number of respondents from phase II
+sum(!is.na(d_Processed$mTurk))
+```
+
+### Estimate attrition
+```{r}
+# What percentage of people did not "Finish"?
+nrow(d_Processed[Finished == "FALSE", ])/ nrow(d_Processed)
+# What percentage of people did not consent?
+nrow(d_Processed[(d_Processed$ConsentFormResponse == "Decline")])/ nrow(d_Processed)
+
+# Number of NAs
+sum(is.na(d_Processed))
+# Total NAs by rows
+rowSums(is.na(d_Processed))
+# Check if all columns of given rows are NAs (Unanswered questions)
+d_Processed$Any_NA = apply(d_Processed[, 18:27], 1, function(x) any(is.na(x)))
+# Is attrition related to treatment?
+nrow(d_Processed[(Any_NA == "TRUE" & Group == "Treatment"), ])/ nrow(d_Processed[(Any_NA == "TRUE"), ])
+nrow(d_Processed[(Any_NA == "TRUE"), ])
+# New data table for imputation
+d_Processed_NAs = d_Processed
+# Dimensions
+dim(d_Processed_NAs)
+
+# Subset data without any NAs for questions
+d_Processed = d_Processed[!(d_Processed$Any_NA == "TRUE"),]
+# Dimensions
+dim(d_Processed)
+```
+
+### Estimate non-compliance
+```{r}
+# Non-Compliance, data without NAs 
+nrow(d_Processed[(Group == "Treatment" & DurationInSeconds < 480), ])/nrow(d_Processed[(Group == "Treatment")])
+# Non-Compliance, data with NAs 
+nrow(d_Processed_NAs[(Group == "Treatment" & DurationInSeconds < 480), ])/nrow(d_Processed_NAs[(Group == "Treatment")])
+
+
+# Compliance rate, ITT_D or alpha for raw data without NAs
+ITT_D_raw = nrow(d_Processed[(Group == "Treatment" & DurationInSeconds >= 480), ])/nrow(d_Processed[(Group == "Treatment")])
+# Compliance rate, ITT_D or alpha for raw data with NAs
+ITT_D_NAs = nrow(d_Processed_NAs[(Group == "Treatment" & DurationInSeconds >= 480), ])/nrow(d_Processed_NAs[(Group == "Treatment")])
+
+
+# For people to comply with the treatment, they would need to spend at least 8 minutes on the meditation. Thus, any one in the treatment group with a total time under 8*60=480 seconds, did not complete the treatment. This is a conservative assumption.
+# Raw data/without NAs
+nrow(d_Processed[(Group == "Treatment" & TimingPageSubmit < 480), ])
+# With NAs
+nrow(d_Processed_NAs[(Group == "Treatment" & TimingPageSubmit < 480), ])
+```
+
+### Impute missing data with min and max values
+```{r}
+# Impute data with min values for missing scores
+d_Processed_min = d_Processed_NAs
+# Which rows have NAs
+which(is.na(d_Processed_NAs[, 18:27]), arr.ind=TRUE) # d_Processed_max[22:25, 18:27]
+# Get indices of data with NAs & in treatment
+TreatmentNAs_IDs = d_Processed_NAs$ID[which(rowSums(is.na(d_Processed_NAs[, 18:27])) == 10 &
+                        d_Processed_NAs$Group == "Treatment") ]
+# Get indices of data with NAs & in control
+ControlNAs_IDs = d_Processed_NAs$ID[which(rowSums(is.na(d_Processed_NAs[, 18:27])) == 10 &
+                        d_Processed_NAs$Group == "Control") ]
+# Imputation for lower bound
+d_Processed_min[, 18:27][is.na(d_Processed_min[, 18:27])] = min(d_Processed_min[, 18:27], na.rm = T) 
+# Impute data with max values for missing scores
+d_Processed_max = d_Processed_NAs
+# Imputation for upper bound
+d_Processed_max[, 18:27][is.na(d_Processed_max[, 18:27])] = max(d_Processed_max[, 18:27], na.rm = T)
+```
+
+### Feature engineering: score questions with raw data without NAs
+```{r}
+### RAW DATA without NAS
+# Columns with fake,F, news 
+select(d_Processed, contains("_F"))
+# For each question, if it is true/real, leave the score, else it is fake/false and flip the sign of the values
+d_Processed[,c(grep("_F", colnames(d_Processed)))] = select(d_Processed ,contains("_F"))*-1
+# Sanity check
+select(d_Processed ,contains("_F"))
+
+# For Easy questions, leave the score,
+# for Medium questions, multiply score by 2, and 
+# for Hard questions, multiply score by 3.
+# Medium questions
+select(d_Processed ,contains("_M_"))
+# Multiply by 2
+d_Processed[,c(grep("_M_", colnames(d_Processed)))] = select(d_Processed ,contains("_M_")) * 2
+# Sanity check
+select(d_Processed ,contains("_M_"))
+
+# Hard questions
+select(d_Processed ,contains("_H_"))
+# Multiply by 3
+d_Processed[,c(grep("_H_", colnames(d_Processed)))] = select(d_Processed ,contains("_H_")) * 3
+# Sanity check
+select(d_Processed ,contains("_H_"))
+
+# Sum row totals for each question for total score
+d_Processed$Score = rowSums(d_Processed[,18:27])
+# Order by score
+#d_Processed[order(Score, decreasing=T),]
+# Header
+head(d_Processed)
+# Final dimensions
+dim(d_Processed)
+
+# Create dummy for m turk
+d_Processed[, MTurkey := ifelse(is.na(mTurk),
+                         # 0 = phase 1, not from mturk
+                         0,
+                         # else, 1 = from mturk
+                        1)]
+# Sanity check
+head(d_Processed)
+# Summary
+summary(d_Processed$Score)
+```
+### Feature engineering: score questions with raw data with NAs
+```{r}
+### Raw data with NAs
+# Columns with fake,F, news 
+select(d_Processed_NAs, contains("_F"))
+# For each question, if it is true/real, leave the score, else it is fake/false and flip the sign of the values
+d_Processed_NAs[,c(grep("_F", colnames(d_Processed_NAs)))] = select(d_Processed_NAs ,contains("_F"))*-1
+# Sanity check
+select(d_Processed_NAs ,contains("_F"))
+
+# For Easy questions, leave the score,
+# for Medium questions, multiply score by 2, and 
+# for Hard questions, multiply score by 3.
+# Medium questions
+select(d_Processed_NAs ,contains("_M_"))
+# Multiply by 2
+d_Processed_NAs[,c(grep("_M_", colnames(d_Processed_NAs)))] = select(d_Processed_NAs ,contains("_M_")) * 2
+# Sanity check
+select(d_Processed_NAs ,contains("_M_"))
+
+# Hard questions
+select(d_Processed_NAs ,contains("_H_"))
+# Multiply by 3
+d_Processed_NAs[,c(grep("_H_", colnames(d_Processed_NAs)))] = select(d_Processed_NAs ,contains("_H_")) * 3
+# Sanity check
+select(d_Processed_NAs ,contains("_H_"))
+
+# Sum row totals for each question for total score
+d_Processed_NAs$Score = rowSums(d_Processed_NAs[,18:27])
+# Order by score
+#d_Processed_NAs[order(Score, decreasing=T),]
+# Header
+head(d_Processed_NAs)
+# Final dimensions
+dim(d_Processed_NAs)
+
+# Create dummy for m turk
+d_Processed_NAs[, MTurkey := ifelse(is.na(mTurk),
+                         # 0 = phase 1, not from mturk
+                         0,
+                         # else, 1 = from mturk
+                        1)]
+# Sanity check
+head(d_Processed_NAs)
+# Summary
+summary(d_Processed_NAs$Score)
+```
+
+### Feature engineering: score questions with min value imputed data
+```{r}
+### MIN DATA
+# Sanity check
+d_Processed_min[22:25, c(18:27)]
+# Columns with fake,F, news 
+select(d_Processed_min, contains("_F"))
+# For each question, if it is true/real, leave the score, else it is fake/false and flip the sign of the values
+d_Processed_min[,c(grep("_F", colnames(d_Processed_min)))] = select(d_Processed_min ,contains("_F"))*1
+# Sanity check
+select(d_Processed_min ,contains("_F"))
+
+# For Easy questions, leave the score,
+# for Medium questions, multiply score by 2, 
+# and for Hard questions, multiply score by 3.
+# Medium questions
+select(d_Processed_min ,contains("_M_"))
+# Multiply by 2
+d_Processed_min[,c(grep("_M_", colnames(d_Processed_min)))] = select(d_Processed_min ,contains("_M_")) * 2
+# Sanity check
+select(d_Processed_min ,contains("_M_"))
+
+# Hard questions
+select(d_Processed_min ,contains("_H_"))
+# Multiply by 3
+d_Processed_min[,c(grep("_H_", colnames(d_Processed_min)))] = select(d_Processed_min,contains("_H_")) * 3
+# Sanity check
+select(d_Processed_min ,contains("_H_"))
+
+# Sum row totals for each question for total score
+d_Processed_min$Score = rowSums(d_Processed_min[,18:27])
+# Order by score
+#d_Processed_min[order(Score, decreasing=T),]
+# Header
+head(d_Processed_min)
+# Final dimensions
+dim(d_Processed_min)
+
+# Create dummy for m turk
+d_Processed_min[, MTurkey := ifelse(is.na(mTurk),
+                         # 0 = phase 1, not from mturk
+                         0,
+                         # else, 1 = from mturk
+                        1)]
+# Sanity check
+head(d_Processed_min)
+# Summary
+summary(d_Processed_min$Score)
+```
+
+### Feature engineering: score questions with max value imputed data
+```{r}
+### MAX DATA
+# Sanity check
+d_Processed_max[22:25, c(18:27)]
+# Columns with fake,F, news 
+select(d_Processed_max, contains("_F"))
+# For each question, if it is true/real, leave the score, else it is fake/false and flip the sign of the values
+d_Processed_max[,c(grep("_F", colnames(d_Processed_max)))] = select(d_Processed_max ,contains("_F"))*1
+# Sanity check
+select(d_Processed_max ,contains("_F"))
+
+# For Easy questions, leave the score, for Medium questions, multiply score by 2, and for Hard questions, multiply score by 3.
+# Medium questions
+select(d_Processed_max ,contains("_M_"))
+# Multiply by 2
+d_Processed_max[,c(grep("_M_", colnames(d_Processed_max)))] = select(d_Processed_max,contains("_M_")) * 2
+# Sanity check
+select(d_Processed_max, contains("_M_"))
+# Hard questions
+select(d_Processed_max, contains("_H_"))
+# Multiply by 3
+d_Processed_max[,c(grep("_H_", colnames(d_Processed_max)))] = select(d_Processed_max, contains("_H_")) * 3
+# Sanity check
+select(d_Processed_max, contains("_H_"))
+
+
+# Sum row totals for each question for total score
+d_Processed_max$Score = rowSums(d_Processed_max[,18:27])
+# Order by score
+#d_Processed_max[order(Score, decreasing=T),]
+# Header
+head(d_Processed_max)
+# Final dimensions
+dim(d_Processed_max)
+
+# Create dummy for m turk
+d_Processed_max[, MTurkey := ifelse(is.na(mTurk),
+                         # 0 = phase 1, not from mturk
+                         0,
+                         # else, 1 = from mturk
+                        1)]
+# Sanity check
+head(d_Processed_max)
+# Summary
+summary(d_Processed_max$Score)
+# Sanity check
+d_Processed_max[d_Processed_max$Score == "100"]
+```
+
+### Sanity check
+```{r}
+# Are the scores different?
+d_Processed$Score == d_Processed_NAs$Score
+# Are the scores different?
+d_Processed_NAs$Score == d_Processed_min$Score
+# Are the scores different?
+d_Processed_NAs$Score == d_Processed_max$Score
+# Are the scores different?
+d_Processed_min$Score == d_Processed_max$Score
+# Summaries
+summary(d_Processed_NAs$Score, na.rm=T)
+summary(d_Processed_min$Score)
+summary(d_Processed_max$Score)
+# Data with NAs in treatment
+d_Processed_min[TreatmentNAs_IDs,18:27]
+# Data with NAs in control
+d_Processed_min[ControlNAs_IDs,18:27]
+```
+
+
+### ITT & CACE 
+```{r}
+# Intent to treat for raw data without NAs
+ITT = mean(d_Processed[Group=="Treatment", Score]) - mean(d_Processed[Group=="Control", Score])
+ITT
+# Intent to treat for raw data with NAs
+ITT_NAs = mean(d_Processed_NAs[Group=="Treatment", Score], na.rm=TRUE) - mean(d_Processed_NAs[Group=="Control", Score], na.rm=TRUE)
+ITT_NAs 
+# Intent to treat for min data
+ITT_min = mean(d_Processed_min[Group=="Treatment", Score]) - mean(d_Processed_min[Group=="Control", Score])
+ITT_min 
+# Intent to treat for max data
+ITT_max = mean(d_Processed_max[Group=="Treatment", Score]) - mean(d_Processed_max[Group=="Control", Score])
+ITT_max 
+
+# CACE = ITT / complier rate for raw data without NAs
+CACE = ITT/ITT_D_raw
+CACE
+# CACE = ITT / complier rate for raw data with NAs
+CACE_NAs = ITT_NAs/ITT_D_NAs
+CACE_NAs
+# CACE = ITT / complier rate for min data
+CACE_min = ITT_min/ITT_D_NAs
+CACE_min
+# CACE = ITT / complier rate for raw data/without NAs
+CACE_max = ITT_max/ITT_D_NAs
+CACE_max
+```
+
+### Filter out Non_Compliant
+```{r}
+# # Filter out non_compliant for raw data without NAs
+d_Processed = d_Processed[!(Group == "Treatment" & TimingPageSubmit < 480), ]
+# Dimensions
+dim(d_Processed)
+
+# Filter out non_compliant for raw data with NAs
+d_Processed_NAs = d_Processed_NAs[!(Group == "Treatment" & TimingPageSubmit < 480), ]
+# Dimensions
+dim(d_Processed_NAs)
+
+# Filter out non_compliant for min data
+d_Processed_min = d_Processed_min[!(Group == "Treatment" & TimingPageSubmit < 480), ]
+# Dimensions
+dim(d_Processed_min)
+
+# Filter out non_compliant for max data
+d_Processed_max = d_Processed_max[!(Group == "Treatment" & TimingPageSubmit < 480), ]
+# Dimensions
+dim(d_Processed_max)
+```
+### Data dimensions
+```{r}
+# Without NAs
+dim(d_Processed)
+# With NAs
+dim(d_Processed_NAs)
+# Min imputed
+dim(d_Processed_min)
+# Max imputed
+dim(d_Processed_max)
+```
+
+## Exploratory data analysis
+```{r}
+# Histograms
+# Score by treatment for raw data without NAs
+ggplot(d_Processed, aes(Score, fill=as.factor(Group), color=as.factor(Group))) + 
+  geom_histogram(bins=20, position='dodge', alpha=1/2) +
+  theme_bw() +
+  scale_x_continuous(breaks=c(seq(-30,90, by=30)))+
+  scale_color_manual(values=c("#999999", "#000000", "#000000"))+
+  scale_fill_manual(values=c("#999999", "#000000", "#000000"))
+# Score by treatment for raw data with NAs
+ggplot(d_Processed_NAs, aes(Score, fill=as.factor(Group), color=as.factor(Group))) + 
+  geom_histogram(bins=20, position='dodge', alpha=1/2) +
+  theme_bw() +
+  scale_x_continuous(breaks=c(seq(-30,90, by=30)))+
+  scale_color_manual(values=c("#999999", "#000000", "#000000"))+
+  scale_fill_manual(values=c("#999999", "#000000", "#000000"))
+# Score by treatment for min data
+ggplot(d_Processed_min, aes(Score, fill=as.factor(Group), color=as.factor(Group))) + 
+  geom_histogram(bins=20, position='dodge', alpha=1/2) +
+  theme_bw() +
+  scale_x_continuous(breaks=c(seq(-30,90, by=30)))+
+  scale_color_manual(values=c("#999999", "#000000", "#000000"))+
+  scale_fill_manual(values=c("#999999", "#000000", "#000000"))
+# Score by treatment for max data
+ggplot(d_Processed_max, aes(Score, fill=as.factor(Group), color=as.factor(Group))) + 
+  geom_histogram(bins=20, position='dodge', alpha=1/2) +
+  theme_bw() +
+  scale_x_continuous(breaks=c(seq(-30,90, by=30)))+
+  scale_color_manual(values=c("#999999", "#000000", "#000000"))+
+  scale_fill_manual(values=c("#999999", "#000000", "#000000"))
+```
+
+### Boxplots for raw data without NAs
+```{r}
+# Boxplots
+# Total score as a function of treatment
+boxplot(d_Processed$Score ~ d_Processed$Group,
+        xlab="treatment assignment",
+        names=c("control","meditation"),
+        ylab="score",
+        outpch=19)
+stripchart(d_Processed$Score ~ d_Processed$Group,
+           vertical=TRUE,
+           method="jitter",
+           add=TRUE,
+           pch=19)
+
+# Define outcomes
+outcomes = names(d_Processed)[d_Processed[, grep("Q", names(d_Processed))]]
+# Individual question scores as a function of treatment
+plot=list(seq(length(outcomes)))
+for (c in seq_along(outcomes)){
+ # Total score vs treatment
+   plot[[c]]=ggplot(data=setDF(d_Processed),
+           aes_(x=as.name("Group"),
+               y=as.name(outcomes[c]),
+               group=as.name("Group"), color=as.name("Group"))) +
+    geom_boxplot(outlier.size=3,
+                 alpha=1/2, lwd=1.5, notch=F)+
+    geom_jitter(aes(fill=Group), size=4, pch=20, alpha=1/2, position=position_jitter(w=0.2, h=0.2))+
+    theme_bw()+theme(legend.position="none") +
+    scale_colour_manual(values=c("black", "black"))+
+    scale_x_discrete(labels=c("control", "meditation"))+
+    labs(x="",y=sprintf("question",1, 2,3,4,5,6,7,8,9,10))+
+    theme(text = element_text(size=8))+
+     ylim(-20, 20)
+}
+# Arrange plots in grid
+do.call(grid.arrange, 
+        c(plot, nrow=2, ncol=5,
+          top=("scores for each question"),
+          left=("scores")))
+# Set df as dt
+d_Processed = setDT(d_Processed)
+```
+
+### Boxplots for raw data with NAs
+```{r}
+# Boxplots
+# Total score as a function of treatment
+boxplot(d_Processed_NAs$Score ~ d_Processed_NAs$Group,
+        xlab="treatment assignment",
+        names=c("control","meditation"),
+        ylab="score",
+        outpch=19)
+stripchart(d_Processed_NAs$Score ~ d_Processed_NAs$Group,
+           vertical=TRUE,
+           method="jitter",
+           add=TRUE,
+           pch=19)
+
+# Define outcomes
+outcomes = names(d_Processed_NAs)[d_Processed_NAs[, grep("Q", names(d_Processed_NAs))]]
+# Individual question scores as a function of treatment
+plot=list(seq(length(outcomes)))
+for (c in seq_along(outcomes)){
+ # Total score vs treatment
+   plot[[c]]=ggplot(data=setDF(d_Processed_NAs),
+           aes_(x=as.name("Group"),
+               y=as.name(outcomes[c]),
+               group=as.name("Group"), color=as.name("Group"))) +
+    geom_boxplot(outlier.size=3,
+                 alpha=1/2, lwd=1.5, notch=F)+
+    geom_jitter(aes(fill=Group), size=4, pch=20, alpha=1/2, position=position_jitter(w=0.2, h=0.2))+
+    theme_bw()+theme(legend.position="none") +
+    scale_colour_manual(values=c("black", "black"))+
+    scale_x_discrete(labels=c("control", "meditation"))+
+    labs(x="",y=sprintf("question",1, 2,3,4,5,6,7,8,9,10))+
+    theme(text = element_text(size=8))+
+     ylim(-20, 20)
+}
+# Arrange plots in grid
+do.call(grid.arrange, 
+        c(plot, nrow=2, ncol=5,
+          top=("scores for each question"),
+          left=("scores")))
+# Set df as dt
+d_Processed_NAs = setDT(d_Processed_NAs)
+```
+
+### Boxplots for min data
+```{r}
+# Boxplots
+# Total score as a function of treatment
+boxplot(d_Processed_min$Score ~ d_Processed_min$Group,
+        xlab="treatment assignment",
+        names=c("control","meditation"),
+        ylab="score",
+        outpch=19)
+stripchart(d_Processed_min$Score ~ d_Processed_min$Group,
+           vertical=TRUE,
+           method="jitter",
+           add=TRUE,
+           pch=19)
+
+# Define outcomes
+outcomes = names(d_Processed_min)[d_Processed_min[, grep("Q", names(d_Processed_min))]]
+# Individual question scores as a function of treatment
+plot=list(seq(length(outcomes)))
+for (c in seq_along(outcomes)){
+ # Total score vs treatment
+   plot[[c]]=ggplot(data=setDF(d_Processed_min),
+           aes_(x=as.name("Group"),
+               y=as.name(outcomes[c]),
+               group=as.name("Group"), color=as.name("Group"))) +
+    geom_boxplot(outlier.size=3,
+                 alpha=1/2, lwd=1.5, notch=F)+
+    geom_jitter(aes(fill=Group), size=4, pch=20, alpha=1/2, position=position_jitter(w=0.2, h=0.2))+
+    theme_bw()+theme(legend.position="none") +
+    scale_colour_manual(values=c("black", "black"))+
+    scale_x_discrete(labels=c("control", "meditation"))+
+    labs(x="",y=sprintf("question",1, 2,3,4,5,6,7,8,9,10))+
+    theme(text = element_text(size=8))+
+     ylim(-20, 20)
+}
+# Arrange plots in grid
+do.call(grid.arrange, 
+        c(plot, nrow=2, ncol=5,
+          top=("scores for each question"),
+          left=("scores")))
+# Set df as dt
+d_Processed_min = setDT(d_Processed_min)
+```
+
+### Boxplots for max data
+```{r}
+# Boxplots
+# Total score as a function of treatment
+boxplot(d_Processed_max$Score ~ d_Processed_max$Group,
+        xlab="treatment assignment",
+        names=c("control","meditation"),
+        ylab="score",
+        outpch=19)
+stripchart(d_Processed_max$Score ~ d_Processed_max$Group,
+           vertical=TRUE,
+           method="jitter",
+           add=TRUE,
+           pch=19)
+# Define outcomes
+outcomes = names(d_Processed_max)[d_Processed_max[, grep("Q", names(d_Processed_max))]]
+# Individual question scores as a function of treatment
+plot=list(seq(length(outcomes)))
+for (c in seq_along(outcomes)){
+ # Total score vs treatment
+   plot[[c]]=ggplot(data=setDF(d_Processed_max),
+           aes_(x=as.name("Group"),
+               y=as.name(outcomes[c]),
+               group=as.name("Group"), color=as.name("Group"))) +
+    geom_boxplot(outlier.size=3,
+                 alpha=1/2, lwd=1.5, notch=F)+
+    geom_jitter(aes(fill=Group), size=4, pch=20, alpha=1/2, position=position_jitter(w=0.2, h=0.2))+
+    theme_bw()+theme(legend.position="none") +
+    scale_colour_manual(values=c("black", "black"))+
+    scale_x_discrete(labels=c("control", "meditation"))+
+    labs(x="",y=sprintf("question",1, 2,3,4,5,6,7,8,9,10))+
+    theme(text = element_text(size=8))+
+     ylim(-20, 20)
+}
+# Arrange plots in grid
+do.call(grid.arrange, 
+        c(plot, nrow=2, ncol=5,
+          top=("scores for each question"),
+          left=("scores")))
+# Set df as dt
+d_Processed_max = setDT(d_Processed_max)
+```
+### All boxplots
+```{r}
+# All
+gridExtra::grid.arrange(
+# Raw data without NAs
+ggplot(data=d_Processed,
+       aes_(x=as.name("Group"),
+           y=as.name("Score"),
+           group=as.name("Group"), color=as.name("Group"))) +
+geom_boxplot(outlier.size=3,
+             alpha=3/4, lwd=1.5, notch=F)+
+geom_jitter(aes(fill=Group), size=4, pch=20, alpha=3/4, position=position_jitter(w=0.1, h=0.1))+
+theme_bw() + theme(panel.grid.major=element_line(colour="white"))+
+scale_colour_manual(values=c("black", "black"))+
+labs(x=" ", y="scores without NAs")+
+theme(axis.title.x=element_text(size=12, face="bold"))+
+theme(axis.title.y=element_text(size=12, face="bold"))+
+scale_x_discrete(labels=c("control", "meditation"))+
+theme(axis.title.x=element_text(size=10))+
+theme(axis.title.y=element_text(size=10))+
+theme(axis.text.x=element_text(angle=1, size=10, face="bold"))+
+theme(axis.text.y=element_text(size=10, face="bold"))+
+theme(legend.position="none")+ylim(-100, 100),
+# Min
+ggplot(data=d_Processed_min,
+       aes_(x=as.name("Group"),
+           y=as.name("Score"),
+           group=as.name("Group"), color=as.name("Group"))) +
+geom_boxplot(outlier.size=3,
+             alpha=3/4, lwd=1.5, notch=F)+
+geom_jitter(aes(fill=Group), size=4, pch=20, alpha=3/4, position=position_jitter(w=0.1, h=0.1))+
+theme_bw() + theme(panel.grid.major=element_line(colour="white"))+
+scale_colour_manual(values=c("black", "black"))+
+labs(x=" ", y="min imputed scores")+
+theme(axis.title.x=element_text(size=12, face="bold"))+
+theme(axis.title.y=element_text(size=12, face="bold"))+
+scale_x_discrete(labels=c("control", "meditation"))+
+theme(axis.title.x=element_text(size=10))+
+theme(axis.title.y=element_text(size=10))+
+theme(axis.text.x=element_text(angle=1, size=10, face="bold"))+
+theme(axis.text.y=element_text(size=10, face="bold"))+
+theme(legend.position="none")+ylim(-100, 100),
+# Max
+ggplot(data=d_Processed_max,
+       aes_(x=as.name("Group"),
+           y=as.name("Score"),
+           group=as.name("Group"), color=as.name("Group"))) +
+geom_boxplot(outlier.size=3,
+             alpha=3/4, lwd=1.5, notch=F)+
+geom_jitter(aes(fill=Group), size=4, pch=20, alpha=3/4, position=position_jitter(w=0.1, h=0.1))+
+theme_bw() + theme(panel.grid.major=element_line(colour="white"))+
+scale_colour_manual(values=c("black", "black"))+
+labs(x=" ", y="max imputed scores")+
+theme(axis.title.x=element_text(size=12, face="bold"))+
+theme(axis.title.y=element_text(size=12, face="bold"))+
+scale_x_discrete(labels=c("control", "meditation"))+
+theme(axis.title.x=element_text(size=10))+
+theme(axis.title.y=element_text(size=10))+
+theme(axis.text.x=element_text(angle=1, size=10, face="bold"))+
+theme(axis.text.y=element_text(size=10, face="bold"))+
+theme(legend.position="none")+ylim(-100, 100),
+      nrow = 1
+)
+# Set df as dt
+d_Processed_NAs = setDT(d_Processed_NAs)
+# Set df as dt
+d_Processed_min = setDT(d_Processed_min)
+# Set df as dt
+d_Processed_max = setDT(d_Processed_max)
+```
+### Explore attrition
+```{r}
+# using  geom_miss_point()
+ggplot(d_Processed_NAs,
+       aes(x=Group,
+           y=Score)) +
+ geom_miss_point(position=position_jitter(w=0.1, h=0.1),
+                 size=4, pch=20, alpha=3/4)+
+ scale_x_discrete(labels=c("control", "meditation"))+
+ theme_bw()
+
+```
+
+### Scatterplots for raw data
+```{r}
+# Scatterplot
+# Scatterplot matrix
+ggpairs(d_Processed,
+        aes(color=Group, alpha=1/2),
+        columns=c("Score", "Group",
+                  "DoYouMeditateConsistently", "HowMuchNewsDoYouConsumeWeekly",
+                    "DurationInSeconds","Q1_M_R","Q2_H_F","Q3_E_R", "Q4_E_R", "Q5_E_R", "Q6_M_F", "Q7_M_R", "Q8_M_R","Q9_H_R","Q10_H_R"),
+             lower=list(continuous=wrap("points", 
+                                             position=position_jitter(height=.3, width=.3),
+                                             size=0.5)),
+             upper=list(continuous="blank"),
+             diag=list(continuous="blankDiag"))
+
+# Scatterplot matrix
+ggpairs(d_Processed,
+        aes(color=Group, alpha=1/2),
+        columns=c("Score", "Group",
+                  "Q1_M_R","Q2_H_F","Q3_E_R", "Q4_E_R", "Q5_E_R", "Q6_M_F", "Q7_M_R", "Q8_M_R","Q9_H_R","Q10_H_R"),
+             lower=list(continuous=wrap("points", 
+                                             position=position_jitter(height=.3, width=.3),
+                                             size=0.5)),
+             upper=list(continuous="blank"),
+             diag=list(continuous="blankDiag"))
+```
+
+## Inference
+
+### Naive model with raw data without NAs
+```{r}
+# # Naive model plus mturk dummy
+# nm_raw = lm(Score ~ Group + MTurkey,
+#         data = d_Processed)
+# # Coefficients estimates, robust SE, test-statistics, and p-values
+# # Covariance matrix
+# cm1_raw=vcovHC(nm_raw)
+# # Robust SE
+# coeftest(nm_raw, vcov.=cm1_raw)
+
+# Naive model
+nm_raw = lm(Score ~ Group,
+        data = d_Processed)
+# Coefficients estimates, robust SE, test-statistics, and p-values
+# Covariance matrix
+cm1_raw=vcovHC(nm_raw)
+# Robust SE
+coeftest(nm_raw, vcov.=cm1_raw)
+# # Stargazer table
+# stargazer(nm_raw, type = "text",
+#           se = list(sqrt(diag(cm1_raw))),
+#           header=F)
+
+# # plot residuals - look for systematic departures from homoscedasticity
+# ggplot(data = d_Processed,
+#        aes(x = fitted(nm_raw), 
+#            y = resid(nm_raw))) +
+#     geom_jitter(size=4, pch=20, alpha=1/2, position=position_jitter(w = 0.3, h = 0.3))+
+#   theme_bw()
+```
+### Naive model with raw data with NAs
+```{r}
+# # Naive model plus mturk dummy
+# nm_raw = lm(Score ~ Group + MTurkey,
+#         data = d_Processed)
+# # Coefficients estimates, robust SE, test-statistics, and p-values
+# # Covariance matrix
+# cm1_raw=vcovHC(nm_raw)
+# # Robust SE
+# coeftest(nm_raw, vcov.=cm1_raw)
+
+# Naive model
+nm_NAs = lm(Score ~ Group,
+        data = d_Processed_NAs)
+# Coefficients estimates, robust SE, test-statistics, and p-values
+# Covariance matrix
+cm1_NAs=vcovHC(nm_NAs)
+# Robust SE
+coeftest(nm_NAs, vcov.=cm1_NAs)
+# # Stargazer table
+# stargazer(nm_NAs, type = "text",
+#           se = list(sqrt(diag(cm1_NAs))),
+#           header=F)
+
+# # plot residuals - look for systematic departures from homoscedasticity
+# ggplot(data = d_Processed_NAs,
+#        aes(x = fitted(nm_NAs), 
+#            y = resid(nm_NAs))) +
+#     geom_jitter(size=4, pch=20, alpha=1/2, position=position_jitter(w = 0.3, h = 0.3))+
+#   theme_bw()
+```
+
+### Naive model with min data
+```{r}
+# # Naive model plus mturk dummy
+# nm_min = lm(Score ~ Group + MTurkey,
+#         data = d_Processed_min)
+# # Coefficients estimates, robust SE, test-statistics, and p-values
+# # Covariance matrix
+# cm1_min=vcovHC(nm_min)
+# # Robust SE
+# coeftest(nm_min, vcov.=cm1_min)
+
+# Naive model
+nm_min = lm(Score ~ Group,
+        data = d_Processed_min)
+# Coefficients estimates, robust SE, test-statistics, and p-values
+# Covariance matrix
+cm1_min=vcovHC(nm_min)
+# Robust SE
+coeftest(nm_min, vcov.=cm1_min)
+# Stargazer table
+# stargazer(nm_min, type = "text",
+#           se = list(sqrt(diag(cm1_min))),
+#           header=F)
+
+# # plot residuals - look for systematic departures from homoscedasticity
+# ggplot(data = d_Processed_min,
+#        aes(x = fitted(nm_min), 
+#            y = resid(nm_min))) +
+#     geom_jitter(size=4, pch=20, alpha=1/2, position=position_jitter(w = 0.3, h = 0.3))+
+#   theme_bw()
+```
+
+### Naive model with max data
+```{r}
+# # Naive model plus mturk dummy
+# nm_max = lm(Score ~ Group + MTurkey,
+#         data = d_Processed_max)
+# # Coefficients estimates, robust SE, test-statistics, and p-values
+# # Covariance matrix
+# cm1_max=vcovHC(nm_max)
+# # Robust SE
+# coeftest(nm_max, vcov.=cm1_max)
+
+# Naive model
+nm_max = lm(Score ~ Group,
+        data = d_Processed_max)
+# Coefficients estimates, robust SE, test-statistics, and p-values
+# Covariance matrix
+cm1_max=vcovHC(nm_max)
+# Robust SE
+coeftest(nm_max, vcov.=cm1_max)
+# # Stargazer table
+# stargazer(nm_max, type = "text",
+#           se = list(sqrt(diag(cm1_max))),
+#           header=F)
+
+# # plot residuals - look for systematic departures from homoscedasticity
+# ggplot(data = d_Processed_max,
+#        aes(x = fitted(nm_max), 
+#            y = resid(nm_max))) +
+#     geom_jitter(size=4, pch=20, alpha=1/2, position=position_jitter(w = 0.3, h = 0.3))+
+#   theme_bw()
+```
+
+
+### Control for block/covariate 1: meditation experience & detect heterogeneous treatment effects with raw data without NAs
+```{r}
+# # Build model that controls for meditation experience plus mturk
+# lmMed_raw = lm(Score ~ Group * DoYouMeditateConsistently + MTurkey,
+#         data = d_Processed)
+# # Coefficients estimates, robust SE, test-statistics, and p-values
+# # Covariance matrix
+# cm2_raw=vcovHC(lmMed_raw)
+# # Robust SE
+# coeftest(lmMed_raw, vcov.=cm2_raw)
+
+
+# Build model that controls for meditation experience
+lmMed_raw = lm(Score ~ Group * DoYouMeditateConsistently,
+        data = d_Processed)
+# Coefficients estimates, robust SE, test-statistics, and p-values
+# Covariance matrix
+cm2_raw=vcovHC(lmMed_raw)
+# Robust SE
+coeftest(lmMed_raw, vcov.=cm2_raw)
+# Stargazer table
+# stargazer(lmMed_raw, type = "text",
+#           se = list(sqrt(diag(cm2_raw))),
+#           header=F)
+
+# # plot residuals - look for systematic departures from homoscedasticity
+# ggplot(data = d_Processed,
+#        aes(x = fitted(lmMed_raw), 
+#            y = resid(lmMed_raw))) +
+#     geom_jitter(size=4, pch=20, alpha=1/2, position=position_jitter(w = 0.3, h = 0.3))+
+#   theme_bw()
+```
+### Control for block/covariate 1: meditation experience & detect heterogeneous treatment effects with raw data without NAs
+```{r}
+# # Build model that controls for meditation experience plus mturk
+# lmMed_raw = lm(Score ~ Group * DoYouMeditateConsistently + MTurkey,
+#         data = d_Processed)
+# # Coefficients estimates, robust SE, test-statistics, and p-values
+# # Covariance matrix
+# cm2_raw=vcovHC(lmMed_raw)
+# # Robust SE
+# coeftest(lmMed_raw, vcov.=cm2_raw)
+
+
+# Build model that controls for meditation experience
+lmMed_NAs = lm(Score ~ Group * DoYouMeditateConsistently,
+        data = d_Processed_NAs )
+# Coefficients estimates, robust SE, test-statistics, and p-values
+# Covariance matrix
+cm2_NAs =vcovHC(lmMed_NAs )
+# Robust SE
+coeftest(lmMed_NAs, vcov.=cm2_NAs)
+# # Stargazer table
+# stargazer(lmMed_raw, type = "text",
+#           se = list(sqrt(diag(cm2_raw))),
+#           header=F)
+
+# # plot residuals - look for systematic departures from homoscedasticity
+# ggplot(data = d_Processed_NAs ,
+#        aes(x = fitted(lmMed_NAs ), 
+#            y = resid(lmMed_NAs ))) +
+#     geom_jitter(size=4, pch=20, alpha=1/2, position=position_jitter(w = 0.3, h = 0.3))+
+#   theme_bw()
+```
+
+
+### Control for block/covariate 1: meditation experience & detect heterogeneous treatment effects with min data
+```{r}
+# # Build model that controls for meditation experience plus mturk
+# lmMed_min = lm(Score ~ Group * DoYouMeditateConsistently + MTurkey,
+#         data = d_Processed_min)
+# # Coefficients estimates, robust SE, test-statistics, and p-values
+# # Covariance matrix
+# cm2_min=vcovHC(lmMed_min)
+# # Robust SE
+# coeftest(lmMed_min, vcov.=cm2_min)
+
+
+# Build model that controls for meditation experience
+lmMed_min = lm(Score ~ Group * DoYouMeditateConsistently,
+        data = d_Processed_min)
+# Coefficients estimates, robust SE, test-statistics, and p-values
+# Covariance matrix
+cm2_min=vcovHC(lmMed_min,type = "HC5")
+# Robust SE
+coeftest(lmMed_min, vcov.=cm2_min)
+# Stargazer table
+# stargazer(lmMed_min, type = "text",
+#           se = list(sqrt(diag(cm2_min))),
+#           header=F)
+
+# # plot residuals - look for systematic departures from homoscedasticity
+# ggplot(data = d_Processed_min,
+#        aes(x = fitted(lmMed_min), 
+#            y = resid(lmMed_min))) +
+#     geom_jitter(size=4, pch=20, alpha=1/2, position=position_jitter(w = 0.3, h = 0.3))+
+#   theme_bw()
+```
+### Control for block/covariate 1: meditation experience & detect heterogeneous treatment effects with max data
+```{r}
+# # Build model that controls for meditation experience plus mturk
+# lmMed_max = lm(Score ~ Group * DoYouMeditateConsistently + MTurkey,
+#         data = d_Processed_max)
+# # Coefficients estimates, robust SE, test-statistics, and p-values
+# # Covariance matrix
+# cm2_max=vcovHC(lmMed_max)
+# # Robust SE
+# coeftest(lmMed_max, vcov.=cm2_max)
+
+
+# Build model that controls for meditation experience
+lmMed_max = lm(Score ~ Group * DoYouMeditateConsistently,
+        data = d_Processed_max)
+# Coefficients estimates, robust SE, test-statistics, and p-values
+# Covariance matrix
+cm2_max=vcovHC(lmMed_max)
+# Robust SE
+coeftest(lmMed_max, vcov.=cm2_max)
+# Stargazer table
+# stargazer(lmMed_max, type = "text",
+#           se = list(sqrt(diag(cm2_max))),
+#           header=F)
+
+# # plot residuals - look for systematic departures from homoscedasticity
+# ggplot(data = d_Processed_max,
+#        aes(x = fitted(lmMed_max), 
+#            y = resid(lmMed_max))) +
+#     geom_jitter(size=4, pch=20, alpha=1/2, position=position_jitter(w = 0.3, h = 0.3))+
+#   theme_bw()
+```
+
+
+
+### Control for block/covariate 2: news consumption & detect heterogeneous treatment effects with raw data
+```{r}
+# # Build model that controls for news consumption plus mturk
+# lmNews_raw= lm(Score ~ Group * HowMuchNewsDoYouConsumeWeekly + MTurkey,
+#         data = d_Processed)
+# # Coefficients estimates, robust SE, test-statistics, and p-values
+# # Covariance matrix
+# cm3_raw=vcovHC(lmNews_raw)
+# # Robust SE
+# coeftest(lmNews_raw, vcov.=cm3_raw)
+
+# Build model that controls for news consumption
+lmNews_raw= lm(Score ~ Group * HowMuchNewsDoYouConsumeWeekly,
+        data = d_Processed)
+# Coefficients estimates, robust SE, test-statistics, and p-values
+# Covariance matrix
+cm3_raw=vcovHC(lmNews_raw)
+# Robust SE
+coeftest(lmNews_raw, vcov.=cm3_raw)
+# Stargazer table
+# stargazer(lmNews_raw, type = "text",
+#           se = list(sqrt(diag(cm3_raw))),
+#           header=F)
+
+# # plot residuals - look for systematic departures from homoscedasticity
+# ggplot(data = d_Processed,
+#        aes(x = fitted(lmNews_raw), 
+#            y = resid(lmNews_raw))) +
+#     geom_jitter(size=4, pch=20, alpha=1/2, position=position_jitter(w = 0.3, h = 0.3))+
+#   theme_bw()
+```
+### Control for block/covariate 2: news consumption & detect heterogeneous treatment effects with NAs data
+```{r}
+# # Build model that controls for news consumption plus mturk
+# lmNews_raw= lm(Score ~ Group * HowMuchNewsDoYouConsumeWeekly + MTurkey,
+#         data = d_Processed)
+# # Coefficients estimates, robust SE, test-statistics, and p-values
+# # Covariance matrix
+# cm3_raw=vcovHC(lmNews_raw)
+# # Robust SE
+# coeftest(lmNews_raw, vcov.=cm3_raw)
+
+# Build model that controls for news consumption
+lmNews_NAs= lm(Score ~ Group * HowMuchNewsDoYouConsumeWeekly,
+        data = d_Processed_NAs)
+# Coefficients estimates, robust SE, test-statistics, and p-values
+# Covariance matrix
+cm3_NAs=vcovHC(lmNews_NAs)
+# Robust SE
+coeftest(lmNews_NAs, vcov.=cm3_NAs)
+# Stargazer table
+# stargazer(lmNews_raw, type = "text",
+#           se = list(sqrt(diag(cm3_raw))),
+#           header=F)
+
+# # plot residuals - look for systematic departures from homoscedasticity
+# ggplot(data = d_Processed,
+#        aes(x = fitted(lmNews_raw), 
+#            y = resid(lmNews_raw))) +
+#     geom_jitter(size=4, pch=20, alpha=1/2, position=position_jitter(w = 0.3, h = 0.3))+
+#   theme_bw()
+```
+
+
+### Control for block/covariate 2: news consumption & detect heterogeneous treatment effects with min data
+```{r}
+# # Build model that controls for news consumption plus mturk
+# lmNews_min= lm(Score ~ Group * HowMuchNewsDoYouConsumeWeekly + MTurkey,
+#         data = d_Processed_min)
+# # Coefficients estimates, robust SE, test-statistics, and p-values
+# # Covariance matrix
+# cm3_min=vcovHC(lmNews_min)
+# # Robust SE
+# coeftest(lmNews_min, vcov.=cm3_min)
+
+# Build model that controls for news consumption
+lmNews_min= lm(Score ~ Group * HowMuchNewsDoYouConsumeWeekly,
+        data = d_Processed_min)
+# Coefficients estimates, robust SE, test-statistics, and p-values
+# Covariance matrix
+cm3_min=vcovHC(lmNews_min)
+# Robust SE
+coeftest(lmNews_min, vcov.=cm3_min)
+# Stargazer table
+# stargazer(lmNews_min, type = "text",
+#           se = list(sqrt(diag(cm3_min))),
+#           header=F)
+
+# # plot residuals - look for systematic departures from homoscedasticity
+# ggplot(data = d_Processed_min,
+#        aes(x = fitted(lmNews_min), 
+#            y = resid(lmNews_min))) +
+#     geom_jitter(size=4, pch=20, alpha=1/2, position=position_jitter(w = 0.3, h = 0.3))+
+#   theme_bw()
+```
+
+### Control for block/covariate 2: news consumption & detect heterogeneous treatment effects with max data
+```{r}
+# # Build model that controls for news consumption plus mturk
+# lmNews_max= lm(Score ~ Group * HowMuchNewsDoYouConsumeWeekly + MTurkey,
+#         data = d_Processed_max)
+# # Coefficients estimates, robust SE, test-statistics, and p-values
+# # Covariance matrix
+# cm3_max=vcovHC(lmNews_max)
+# # Robust SE
+# coeftest(lmNews_max, vcov.=cm3_max)
+
+# Build model that controls for news consumption
+lmNews_max= lm(Score ~ Group * HowMuchNewsDoYouConsumeWeekly,
+        data = d_Processed_max)
+# Coefficients estimates, robust SE, test-statistics, and p-values
+# Covariance matrix
+cm3_max=vcovHC(lmNews_max)
+# Robust SE
+coeftest(lmNews_max, vcov.=cm3_max)
+# Stargazer table
+# stargazer(lmNews_max, type = "text",
+#           se = list(sqrt(diag(cm3_max))),
+#           header=F)
+
+# # plot residuals - look for systematic departures from homoscedasticity
+# ggplot(data = d_Processed_max,
+#        aes(x = fitted(lmNews_max), 
+#            y = resid(lmNews_max))) +
+#     geom_jitter(size=4, pch=20, alpha=1/2, position=position_jitter(w = 0.3, h = 0.3))+
+#   theme_bw()
+```
+
+### Control for block/covariate 1 & 2: meditation experience & news consumption & detect heterogeneous treatment effects with raw data
+```{r}
+# # Build model that controls for news consumption plus mturk
+# lmMedNews_raw= lm(Score ~ Group * DoYouMeditateConsistently + Group * HowMuchNewsDoYouConsumeWeekly + MTurkey,
+#         data = d_Processed)
+# # Coefficients estimates, robust SE, test-statistics, and p-values
+# # Covariance matrix
+# cm4_raw=vcovHC(lmMedNews_raw)
+# # Robust SE
+# coeftest(lmMedNews_raw, vcov.=cm4_raw)
+
+# Build model that controls for news consumption
+lmMedNews_raw= lm(Score ~ Group * DoYouMeditateConsistently + Group * HowMuchNewsDoYouConsumeWeekly,
+        data = d_Processed)
+# Coefficients estimates, robust SE, test-statistics, and p-values
+# Covariance matrix
+cm4_raw=vcovHC(lmMedNews_raw)
+# Robust SE
+coeftest(lmMedNews_raw, vcov.=cm4_raw)
+# Stargazer table
+# stargazer(lmMedNews_raw, type = "text",
+#           se = list(sqrt(diag(cm4_raw))),
+#           header=F)
+
+# # plot residuals - look for systematic departures from homoscedasticity
+# ggplot(data = d_Processed,
+#        aes(x = fitted(lmMedNews_raw), 
+#            y = resid(lmMedNews_raw))) +
+#     geom_jitter(size=4, pch=20, alpha=1/2, position=position_jitter(w = 0.3, h = 0.3))+
+#   theme_bw()
+```
+### Control for block/covariate 1 & 2: meditation experience & news consumption & detect heterogeneous treatment effects with NAs data
+```{r}
+# # Build model that controls for news consumption plus mturk
+# lmMedNews_raw= lm(Score ~ Group * DoYouMeditateConsistently + Group * HowMuchNewsDoYouConsumeWeekly + MTurkey,
+#         data = d_Processed)
+# # Coefficients estimates, robust SE, test-statistics, and p-values
+# # Covariance matrix
+# cm4_raw=vcovHC(lmMedNews_raw)
+# # Robust SE
+# coeftest(lmMedNews_raw, vcov.=cm4_raw)
+
+# Build model that controls for news consumption
+lmMedNews_NAs= lm(Score ~ Group * DoYouMeditateConsistently + Group * HowMuchNewsDoYouConsumeWeekly,
+        data = d_Processed_NAs)
+# Coefficients estimates, robust SE, test-statistics, and p-values
+# Covariance matrix
+cm4_NAs=vcovHC(lmMedNews_NAs)
+# Robust SE
+coeftest(lmMedNews_NAs, vcov.=cm4_NAs)
+# Stargazer table
+# stargazer(lmMedNews_raw, type = "text",
+#           se = list(sqrt(diag(cm4_raw))),
+#           header=F)
+
+# # plot residuals - look for systematic departures from homoscedasticity
+# ggplot(data = d_Processed,
+#        aes(x = fitted(lmMedNews_raw), 
+#            y = resid(lmMedNews_raw))) +
+#     geom_jitter(size=4, pch=20, alpha=1/2, position=position_jitter(w = 0.3, h = 0.3))+
+#   theme_bw()
+```
+
+### Control for block/covariate 1 & 2: meditation experience & news consumption & detect heterogeneous treatment effects with min data
+```{r}
+# # Build model that controls for news consumption plus mturk
+# lmMedNews_min= lm(Score ~ Group * DoYouMeditateConsistently + Group * HowMuchNewsDoYouConsumeWeekly + MTurkey,
+#         data = d_Processed_min)
+# # Coefficients estimates, robust SE, test-statistics, and p-values
+# # Covariance matrix
+# cm4_min=vcovHC(lmMedNews_min)
+# # Robust SE
+# coeftest(lmMedNews_min, vcov.=cm4_min)
+
+# Build model that controls for news consumption
+lmMedNews_min= lm(Score ~ Group * DoYouMeditateConsistently + Group * HowMuchNewsDoYouConsumeWeekly,
+        data = d_Processed_min)
+# Coefficients estimates, robust SE, test-statistics, and p-values
+# Covariance matrix
+cm4_min=vcovHC(lmMedNews_min)
+# Robust SE
+coeftest(lmMedNews_min, vcov.=cm4_min)
+# Stargazer table
+# stargazer(lmMedNews_min, type = "text",
+#           se = list(sqrt(diag(cm4_min))),
+#           header=F)
+
+# # plot residuals - look for systematic departures from homoscedasticity
+# ggplot(data = d_Processed_min,
+#        aes(x = fitted(lmMedNews_min), 
+#            y = resid(lmMedNews_min))) +
+#     geom_jitter(size=4, pch=20, alpha=1/2, position=position_jitter(w = 0.3, h = 0.3))+
+#   theme_bw()
+```
+
+### Control for block/covariate 1 & 2: meditation experience & news consumption & detect heterogeneous treatment effects with max data
+```{r}
+# # Build model that controls for news consumption plus mturk
+# lmMedNews_max= lm(Score ~ Group * DoYouMeditateConsistently + Group * HowMuchNewsDoYouConsumeWeekly + MTurkey,
+#         data = d_Processed_max)
+# # Coefficients estimates, robust SE, test-statistics, and p-values
+# # Covariance matrix
+# cm4_max=vcovHC(lmMedNews_max)
+# # Robust SE
+# coeftest(lmMedNews_max, vcov.=cm4_max)
+
+# Build model that controls for news consumption
+lmMedNews_max= lm(Score ~ Group * DoYouMeditateConsistently + Group * HowMuchNewsDoYouConsumeWeekly,
+        data = d_Processed_max)
+# Coefficients estimates, robust SE, test-statistics, and p-values
+# Covariance matrix
+cm4_max=vcovHC(lmMedNews_max)
+# Robust SE
+coeftest(lmMedNews_max, vcov.=cm4_max)
+# Stargazer table
+# stargazer(lmMedNews_max, type = "text",
+#           se = list(sqrt(diag(cm4_max))),
+#           header=F)
+
+# # plot residuals - look for systematic departures from homoscedasticity
+# ggplot(data = d_Processed_max,
+#        aes(x = fitted(lmMedNews_max), 
+#            y = resid(lmMedNews_max))) +
+#     geom_jitter(size=4, pch=20, alpha=1/2, position=position_jitter(w = 0.3, h = 0.3))+
+#   theme_bw()
+```
+
+### Control for block/covariate 1 & 2: meditation experience & news consumption & detect all heterogeneous treatment effects with raw data
+```{r}
+# # Build model that controls for news consumption plus mturk
+# lmMedXNews_raw= lm(Score ~ Group * DoYouMeditateConsistently  * HowMuchNewsDoYouConsumeWeekly + MTurkey,
+#         data = d_Processed)
+# 
+# # Coefficients estimates, robust SE, test-statistics, and p-values
+# # Covariance matrix
+# cm5_raw=vcovHC(lmMedXNews_raw)
+# # Robust SE
+# coeftest(lmMedXNews_raw, vcov.=cm5_raw)
+
+# Build model that controls for news consumption
+lmMedXNews_raw = lm(Score ~ Group * DoYouMeditateConsistently  * HowMuchNewsDoYouConsumeWeekly,
+        data = d_Processed)
+
+# Coefficients estimates, robust SE, test-statistics, and p-values
+# Covariance matrix
+cm5_raw=vcovHC(lmMedXNews_raw)
+# Robust SE
+coeftest(lmMedXNews_raw, vcov.=cm5_raw)
+# Stargazer table
+# stargazer(lmMedXNews_raw, type = "text",
+#           se = list(sqrt(diag(cm5_raw))),
+#           header=F)
+
+# # plot residuals - look for systematic departures from homoscedasticity
+# ggplot(data = d_Processed,
+#        aes(x = fitted(lmMedXNews_raw), 
+#            y = resid(lmMedXNews_raw))) +
+#     geom_jitter(size=4, pch=20, alpha=1/2, position=position_jitter(w = 0.3, h = 0.3))+
+#   theme_bw()
+```
+### Control for block/covariate 1 & 2: meditation experience & news consumption & detect all heterogeneous treatment effects with NAs data
+```{r}
+# # Build model that controls for news consumption plus mturk
+# lmMedXNews_raw= lm(Score ~ Group * DoYouMeditateConsistently  * HowMuchNewsDoYouConsumeWeekly + MTurkey,
+#         data = d_Processed)
+# 
+# # Coefficients estimates, robust SE, test-statistics, and p-values
+# # Covariance matrix
+# cm5_raw=vcovHC(lmMedXNews_raw)
+# # Robust SE
+# coeftest(lmMedXNews_raw, vcov.=cm5_raw)
+
+# Build model that controls for news consumption
+lmMedXNews_NAs = lm(Score ~ Group * DoYouMeditateConsistently  * HowMuchNewsDoYouConsumeWeekly,
+        data = d_Processed_NAs)
+
+# Coefficients estimates, robust SE, test-statistics, and p-values
+# Covariance matrix
+cm5_NAs=vcovHC(lmMedXNews_NAs)
+# Robust SE
+coeftest(lmMedXNews_NAs, vcov.=cm5_NAs)
+# Stargazer table
+# stargazer(lmMedXNews_raw, type = "text",
+#           se = list(sqrt(diag(cm5_raw))),
+#           header=F)
+
+# # plot residuals - look for systematic departures from homoscedasticity
+# ggplot(data = d_Processed,
+#        aes(x = fitted(lmMedXNews_raw), 
+#            y = resid(lmMedXNews_raw))) +
+#     geom_jitter(size=4, pch=20, alpha=1/2, position=position_jitter(w = 0.3, h = 0.3))+
+#   theme_bw()
+```
+
+### Control for block/covariate 1 & 2: meditation experience & news consumption & detect all heterogeneous treatment effects with min data
+```{r}
+# # Build model that controls for news consumption plus mturk
+# lmMedXNews_min= lm(Score ~ Group * DoYouMeditateConsistently  * HowMuchNewsDoYouConsumeWeekly + MTurkey,
+#         data = d_Processed_min)
+# 
+# # Coefficients estimates, robust SE, test-statistics, and p-values
+# # Covariance matrix
+# cm5_min=vcovHC(lmMedXNews_min)
+# # Robust SE
+# coeftest(lmMedXNews_min, vcov.=cm5_min)
+
+# Build model that controls for news consumption
+lmMedXNews_min= lm(Score ~ Group * DoYouMeditateConsistently  * HowMuchNewsDoYouConsumeWeekly,
+        data = d_Processed_min)
+
+# Coefficients estimates, robust SE, test-statistics, and p-values
+# Covariance matrix
+cm5_min=vcovHC(lmMedXNews_min)
+# Robust SE
+coeftest(lmMedXNews_min, vcov.=cm5_min)
+# Stargazer table
+# stargazer(lmMedXNews_min, type = "text",
+#           se = list(sqrt(diag(cm5_min))),
+#           header=F)
+
+# # plot residuals - look for systematic departures from homoscedasticity
+# ggplot(data = d_Processed_min,
+#        aes(x = fitted(lmMedXNews_min), 
+#            y = resid(lmMedXNews_min))) +
+#     geom_jitter(size=4, pch=20, alpha=1/2, position=position_jitter(w = 0.3, h = 0.3))+
+#   theme_bw()
+```
+
+### Control for block/covariate 1 & 2: meditation experience & news consumption & detect all heterogeneous treatment effects with max data
+```{r}
+# # Build model that controls for news consumption plus mturk
+# lmMedXNews_max= lm(Score ~ Group * DoYouMeditateConsistently  * HowMuchNewsDoYouConsumeWeekly + MTurkey,
+#         data = d_Processed_max)
+# 
+# # Coefficients estimates, robust SE, test-statistics, and p-values
+# # Covariance matrix
+# cm5_max=vcovHC(lmMedXNews_max)
+# # Robust SE
+# coeftest(lmMedXNews_max, vcov.=cm5_max)
+
+# Build model that controls for news consumption
+lmMedXNews_max= lm(Score ~ Group * DoYouMeditateConsistently  * HowMuchNewsDoYouConsumeWeekly,
+        data = d_Processed_max)
+
+# Coefficients estimates, robust SE, test-statistics, and p-values
+# Covariance matrix
+cm5_max=vcovHC(lmMedXNews_max)
+# Robust SE
+coeftest(lmMedXNews_max, vcov.=cm5_max)
+# # Stargazer table
+# stargazer(lmMedXNews_raw, type = "text",
+#           se = list(sqrt(diag(cm5_max))),
+#           header=F)
+
+# # plot residuals - look for systematic departures from homoscedasticity
+# ggplot(data = d_Processed_max,
+#        aes(x = fitted(lmMedXNews_max), 
+#            y = resid(lmMedXNews_max))) +
+#     geom_jitter(size=4, pch=20, alpha=1/2, position=position_jitter(w = 0.3, h = 0.3))+
+#   theme_bw()
+```
+
+### Altogether now for raw data
+```{r}
+# table for all models
+# Stargazer table
+stargazer(nm_raw,lmMed_raw, lmNews_raw, lmMedNews_raw, lmMedXNews_raw, 
+          type = "latex",align=TRUE,
+          covariate.labels=c("treatment", "meditation experience: no",
+                             "treatment x meditation experience: no",
+                             "news consumption: >5 hrs","news consumption: <1 hr",
+                             "treatment x news consumption: >5 hrs","treatment x news consumption: <1 hr",
+                             "meditation experience: no x news consumption: >5 hrs",
+                             "meditation experience: no x news consumption: <1 hr",
+                             "treatment x meditation experience: no x news consumption: >5 hrs",
+                                "treatment x meditation experience: no x news consumption: <1 hr",
+                                "intercept"),
+          se = list(sqrt(diag(cm1_raw)),
+                    sqrt(diag(cm2_raw)),
+                    sqrt(diag(cm3_raw)),
+                    sqrt(diag(cm4_raw)),
+                    sqrt(diag(cm5_raw))),
+          header=F, out="RawModels.htm")
+```
+
+### Altogether now for min data
+```{r}
+# table for all models
+# Stargazer table
+stargazer(nm_min,lmMed_min, lmNews_min, lmMedNews_min, lmMedXNews_min, 
+          type="latex", align=TRUE,
+          # covariate.labels=c("treatment", "meditation experience: no",
+          #                    "treatment x meditation experience: no",
+          #                    "news consumption: >5 hrs","news consumption: <1 hr",
+          #                    "treatment x news consumption: >5 hrs","treatment x news consumption: <1 hr",
+          #                    "meditation experience: no x news consumption: >5 hrs",
+          #                    "meditation experience: no x news consumption: <1 hr",
+          #                    "treatment x meditation experience: no x news consumption: >5 hrs",
+          #                       "treatment x meditation experience: no x news consumption: <1 hr",
+          #                       "intercept"),
+          se = list(sqrt(diag(cm1_min)),
+                    sqrt(diag(cm2_min)),
+                    sqrt(diag(cm3_min)),
+                    sqrt(diag(cm4_min)),
+                    sqrt(diag(cm5_min))),
+          header=F, out="MinModels.htm")
+```
+### Altogether now for max data
+```{r}
+# table for all models
+# Stargazer table
+stargazer(nm_max,lmMed_max, lmNews_max, lmMedNews_max, lmMedXNews_max, 
+          type = "latex",align=TRUE,
+          # covariate.labels=c("treatment", "meditation experience: no",
+          #                    "treatment x meditation experience: no",
+          #                    "news consumption: >5 hrs","news consumption: <1 hr",
+          #                    "treatment x news consumption: >5 hrs","treatment x news consumption: <1 hr",
+          #                    "meditation experience: no x news consumption: >5 hrs",
+          #                    "meditation experience: no x news consumption: <1 hr",
+          #                    "treatment x meditation experience: no x news consumption: >5 hrs",
+          #                       "treatment x meditation experience: no x news consumption: <1 hr",
+          #                       "intercept"),
+          se = list(sqrt(diag(cm1_max)),
+                    sqrt(diag(cm2_max)),
+                    sqrt(diag(cm3_max)),
+                    sqrt(diag(cm4_max)),
+                    sqrt(diag(cm5_max))),
+          header=F, out="MaxModels.htm")
+```
+### Diagnostics
+### Covariate balance checks
+```{r}
+## Covariate balance between treatment and covariate 1
+# No NAs
+plot(table(d_Processed$Group,
+      d_Processed$DoYouMeditateConsistently),
+     col=c("grey", "grey42"))
+# NAs
+plot(table(d_Processed_NAs$Group,
+     d_Processed_NAs$DoYouMeditateConsistently),
+     col=c("grey", "grey42"))
+
+## Covariate balance between treatment and covariate 2
+# No NAs
+plot(table(d_Processed$Group,
+      d_Processed$HowMuchNewsDoYouConsumeWeekly),
+     col=c("grey42", "grey20", "grey5"))
+# NAs
+plot(table(d_Processed_NAs$Group,
+      d_Processed_NAs$HowMuchNewsDoYouConsumeWeekly),
+     col=c("grey42", "grey20", "grey5"))
+
+```
+
+### Evaluate assumptions
+```{r}
+## Naive regression
+# No NAs
+plot(nm_raw)
+#  NAs
+plot(nm_NAs)
+# min
+plot(nm_min)
+# max
+plot(nm_max)
+
+## 1st covariate regression
+# No NAs
+plot(lmMed_raw)
+# NAs
+plot(lmMed_NAs)
+# min
+plot(lmMed_min)
+# max
+plot(lmMed_max)
+
+## 2nd covariate regression
+# No NAs
+plot(lmNews_raw)
+# NAs
+plot(lmNews_NAs)
+# min
+plot(lmNews_min)
+# max
+plot(lmNews_max)
+
+## 1st and 2nd covariate regression
+# No NAs
+plot(lmMedNews_raw)
+# NAs
+plot(lmMedNews_NAs)
+# min
+plot(lmMedNews_min)
+# max
+plot(lmMedNews_max)
+
+## 1st X 2nd covariate regression
+# No NAs
+plot(lmMedXNews_raw)
+# NAs
+plot(lmMedXNews_NAs)
+# min
+plot(lmMedXNews_raw)
+# max
+plot(lmMedXNews_raw)
+```
