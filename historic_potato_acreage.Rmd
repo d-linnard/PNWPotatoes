@@ -376,7 +376,88 @@ JoinedSpreadCounties <- JoinedSpreadCounties %>%
 rename(Acreage1966 = 8)
 JoinedSpreadCounties <- JoinedSpreadCounties %>%
 rename(Acreage1967 = 9)
-
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1968 = 10)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1969 = 11)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1970 = 12)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1971 = 13)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1972 = 14)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1973 = 15)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1974 = 16)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1975 = 17)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1976 = 18)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1977 = 19)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1978 = 20)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1979 = 21)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1980 = 22)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1981 = 23)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1982 = 24)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1983 = 25)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1984 = 26)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1985 = 27)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1986 = 28)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1987 = 29)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1988 = 30)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1989 = 31)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1990 = 32)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1991 = 33)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1992 = 34)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1993 = 35)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1994 = 36)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1995 = 37)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1996 = 38)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1997 = 39)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1998 = 40)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1999 = 41)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage2000 = 42)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage2001 = 43)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage2002 = 44)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage2003 = 45)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage2004 = 46)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage2005 = 47)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage2006 = 48)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage2007 = 49)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage2008 =50)
 
 # WA county map with joined data. Color gradient based on 1965 data column
 Acreage1965 <- ggplot() + 
@@ -419,139 +500,8 @@ PNWAcreage1965 <- ggplot(us.states,
             xlim = c(-125, -116),ylim = c(45, 50))+
   xlab("Longitude") +
   ylab("Latitude")
-
-
-```
-```{r}
-#Extracted county acreages
-AcreageWithoutCounties <- subset(HistoricAcreage, county_name == '')
-
-AdamsHistoricAcreage <- AdamsData %>%
-  dplyr::select("county_name", "year", "value")
-
-AsotinHistoricAcreage <- AsotinData %>%
-  dplyr::select("county_name", "year", "value")
-
-BentonHistoricAcreage <- BentonData %>%
-  dplyr::select("county_name", "year", "value")
-
-ChelanHistoricAcreage <- ChelanData %>%
-  dplyr::select("county_name", "year", "value")
-
-ClallamHistoricAcreage <- ClallamData %>%
-  dplyr::select("county_name", "year", "value")
-
-ClarkHistoricAcreage <- ClarkData %>%
-  dplyr::select("county_name", "year", "value")
-
-ColumbiaHistoricAcreage <- ColumbiaData %>%
-  dplyr::select("county_name", "year", "value")
-
-CowlitzHistoricAcreage <- CowlitzData %>%
-  dplyr::select("county_name", "year", "value")
-
-DouglasHistoricAcreage <- DouglasData %>%
-  dplyr::select("county_name", "year", "value")
-
-FerryHistoricAcreage <- FerryData %>%
-  dplyr::select("county_name", "year", "value")
-
-FranklinHistoricAcreage <- FranklinData %>%
-  dplyr::select("county_name", "year", "value")
-
-GrantHistoricAcreage <- GrantData %>%
-  dplyr::select("county_name", "year", "value")
-
-GraysHarborHistoricAcreage <- GraysHarborData %>%
-  dplyr::select("county_name", "year","value")
-
-IslandHistoricAcreage <- IslandData %>%
-  dplyr::select("county_name", "year", "value")
-
-JeffersonHistoricAcreage <- JeffersonData %>%
-  dplyr::select("county_name", "year", "value")
-
-KingHistoricAcreage <- KingData %>%
-  dplyr::select("county_name", "year", "value")
-
-KitsapHistoricAcreage <- KitsapData %>%
-  dplyr::select("county_name", "year", "value")
-
-KittitasHistoricAcreage <- KittitasData %>%
-  dplyr::select("county_name", "year", "value")
-
-KlickitatHistoricAcreage <- KlickitatData %>%
-  dplyr::select("county_name", "year", "value")
-
-LewisHistoricAcreage <- LewisData %>%
-  dplyr::select("county_name", "year", "value")
-
-LincolnHistoricAcreage <- LincolnData %>%
-  dplyr::select("county_name", "year", "value")
-
-MasonHistoricAcreage <- MasonData %>%
-  dplyr::select("county_name", "year", "value")
-
-OkanoganHistoricAcreage <- OkanoganData %>%
-  dplyr::select("county_name", "year", "value")
-
-PacificHistoricAcreage <- PacificData %>%
-  dplyr::select("county_name", "year", "value")
-
-PendOreilleHistoricAcreage <- PendOreilleData %>%
-  dplyr::select("county_name", "year", "value")
-
-PierceHistoricAcreage <- PierceData %>%
-  dplyr::select("county_name", "year", "value")
-
-SanJuanHistoricAcreage <- SanJuanData %>%
-  dplyr::select("county_name", "year", "value")
-
-SkagitHistoricAcreage <- SkagitData %>%
-  dplyr::select("county_name", "year", "value")
-
-SkamaniaHistoricAcreage <- SkamaniaData %>%
-  dplyr::select("county_name", "year", "value")
-
-SnohomishHistoricAcreage <- SnohomishData %>%
-  dplyr::select("county_name", "year", "value")
-
-SpokaneHistoricAcreage <- SpokaneData %>%
-  dplyr::select("county_name", "year", "value")
-
-StevensHistoricAcreage <- StevensData %>%
-  dplyr::select("county_name", "year", "value")
-
-ThurstonHistoricAcreage <- ThurstonData %>%
-  dplyr::select("county_name", "year", "value")
-
-WahkiakumHistoricAcreage <- WahkiakumData %>%
-  dplyr::select("county_name", "year", "value")
-
-WallaWallaHistoricAcreage <- WallaWallaData %>%
-  dplyr::select("county_name", "year", "value")
-
-WhatcomHistoricAcreage <- WhatcomData %>%
-  dplyr::select("county_name", "year", "value")
-
-WhitmanHistoricAcreage <- WhitmanData %>%
-  dplyr::select("county_name", "year", "value")
-
-YakimaHistoricAcreage <- YakimaData %>%
-  dplyr::select("county_name", "year", "value")
-```
-
-```{r{
-# For loop gather for mapping multiple individual years of data
-## Notes: Collect an acreage point for each county for each year available. Have all the points for a single year plotted onto the county map. Use same color gradient as average acreage plot. Gather and for loops can automate this process for each year.
-## Sample of a few years, hardcoded just to see what we're working with
-Data1882 <- dta%>%
-  subset(year==1882) #No specific counties listed
-Data2019 <- dta %>%
-  subset(year==2019)#No specific counties listed
-Data2017 <- dta %>% 
-  subset(year==2017) #Multiple acreages listed for the same county (same county, same year, different acreages, may just be different regions within the county). Check sector_desc, domain_desc, util_practice_desc, short_desc
  ```
+ 
 ### Graveyard
 - This code chunk does XYZ
 -This code gives a county map of WA, not using ggplot plot_usmap(regions = "counties", include = c("WA"))
@@ -562,11 +512,11 @@ Data2017 <- dta %>%
                                   "(100, Inf]" = "black"),
                      labels = c("Acreage <= 10", "10 < Acreage <= 100", "Acreage > 100"))
 ```{r}
-df %>%
+dta %>%
   dplyr::select('AverageAcerage' = mean(acerage)) # package::function()
-```
+ ``` 
 # Outlier plot
-  
+
 ```{r}
 dta %>%
   group_by(year) %>%
@@ -767,5 +717,158 @@ OtherUnlistedData <- subset(dta, county_name == '')
 OtherUnlistedAverageAcreage <- mean(OtherUnlistedData$value, na.rm = TRUE)
 
 ### Dataframe of means
-WACountyMeans <- data.frame(AdamsAverageAcreage, AsotinAverageAcreage, BentonAverageAcreage, ChelanAverageAcreage, ClallamAverageAcreage, ClarkAverageAcreage, ColumbiaAverageAcreage, CowlitzAverageAcreage, DouglasAverageAcreage, FerryAverageAcreage, FranklinAverageAcreage, GrantAverageAcreage, GraysHarborAverageAcreage, IslandAverageAcreage, JeffersonAverageAcreage, KingAverageAcreage, KitsapAverageAcreage, KittitasAverageAcreage, KlickitatAverageAcreage, LewisAverageAcreage, LincolnAverageAcreage, MasonAverageAcreage, OkanoganAverageAcreage, PacificAverageAcreage, PendOreilleAverageAcreage, PierceAverageAcreage, SanJuanAverageAcreage, SkagitAverageAcreage, SkamaniaAverageAcreage, SnohomishAverageAcreage, SpokaneAverageAcreage, StevensAverageAcreage, ThurstonAverageAcreage, WahkiakumAverageAcreage, WallaWallaAverageAcreage, WhatcomAverageAcreage, WhitmanAverageAcreage, YakimaAverageAcreage, OtherUnlistedAverageAcreage)
+WACountyMeans <- data.frame(AdamsAverageAcreageele, AsotinAverageAcreage, BentonAverageAcreage, ChelanAverageAcreage, ClallamAverageAcreage, ClarkAverageAcreage, ColumbiaAverageAcreage, CowlitzAverageAcreage, DouglasAverageAcreage, FerryAverageAcreage, FranklinAverageAcreage, GarfieldAverageAcreage, GrantAverageAcreage, GraysHarborAverageAcreage, IslandAverageAcreage, JeffersonAverageAcreage, KingAverageAcreage, KitsapAverageAcreage, KittitasAverageAcreage, KlickitatAverageAcreage, LewisAverageAcreage, LincolnAverageAcreage, MasonAverageAcreage, OkanoganAverageAcreage, PacificAverageAcreage, PendOreilleAverageAcreage, PierceAverageAcreage, SanJuanAverageAcreage, SkagitAverageAcreage, SkamaniaAverageAcreage, SnohomishAverageAcreage, SpokaneAverageAcreage, StevensAverageAcreage, ThurstonAverageAcreage, WahkiakumAverageAcreage, WallaWallaAverageAcreage, WhatcomAverageAcreage, WhitmanAverageAcreage, YakimaAverageAcreage, OtherUnlistedAverageAcreage)
+
+#How to use aggregate example:
+  #Subset county data
+WACountyData <- aggregate(dta[, "value"],
+                          by = list(dta$county_name),
+                          FUN = mean,
+                          na.rm = TRUE,
+                          data = dta) 
+```
+```{r}
+#Extracted county acreages
+AcreageWithoutCounties <- subset(HistoricAcreage, county_name == '')
+
+AdamsHistoricAcreage <- AdamsData %>%
+  dplyr::select("county_name", "year", "value")
+
+AsotinHistoricAcreage <- AsotinData %>%
+  dplyr::select("county_name", "year", "value")
+
+BentonHistoricAcreage <- BentonData %>%
+  dplyr::select("county_name", "year", "value")
+
+ChelanHistoricAcreage <- ChelanData %>%
+  dplyr::select("county_name", "year", "value")
+
+ClallamHistoricAcreage <- ClallamData %>%
+  dplyr::select("county_name", "year", "value")
+
+ClarkHistoricAcreage <- ClarkData %>%
+  dplyr::select("county_name", "year", "value")
+
+ColumbiaHistoricAcreage <- ColumbiaData %>%
+  dplyr::select("county_name", "year", "value")
+
+CowlitzHistoricAcreage <- CowlitzData %>%
+  dplyr::select("county_name", "year", "value")
+
+DouglasHistoricAcreage <- DouglasData %>%
+  dplyr::select("county_name", "year", "value")
+
+FerryHistoricAcreage <- FerryData %>%
+  dplyr::select("county_name", "year", "value")
+
+FranklinHistoricAcreage <- FranklinData %>%
+  dplyr::select("county_name", "year", "value")
+
+GrantHistoricAcreage <- GrantData %>%
+  dplyr::select("county_name", "year", "value")
+
+GraysHarborHistoricAcreage <- GraysHarborData %>%
+  dplyr::select("county_name", "year","value")
+
+IslandHistoricAcreage <- IslandData %>%
+  dplyr::select("county_name", "year", "value")
+
+JeffersonHistoricAcreage <- JeffersonData %>%
+  dplyr::select("county_name", "year", "value")
+
+KingHistoricAcreage <- KingData %>%
+  dplyr::select("county_name", "year", "value")
+
+KitsapHistoricAcreage <- KitsapData %>%
+  dplyr::select("county_name", "year", "value")
+
+KittitasHistoricAcreage <- KittitasData %>%
+  dplyr::select("county_name", "year", "value")
+
+KlickitatHistoricAcreage <- KlickitatData %>%
+  dplyr::select("county_name", "year", "value")
+
+LewisHistoricAcreage <- LewisData %>%
+  dplyr::select("county_name", "year", "value")
+
+LincolnHistoricAcreage <- LincolnData %>%
+  dplyr::select("county_name", "year", "value")
+
+MasonHistoricAcreage <- MasonData %>%
+  dplyr::select("county_name", "year", "value")
+
+OkanoganHistoricAcreage <- OkanoganData %>%
+  dplyr::select("county_name", "year", "value")
+
+PacificHistoricAcreage <- PacificData %>%
+  dplyr::select("county_name", "year", "value")
+
+PendOreilleHistoricAcreage <- PendOreilleData %>%
+  dplyr::select("county_name", "year", "value")
+
+PierceHistoricAcreage <- PierceData %>%
+  dplyr::select("county_name", "year", "value")
+
+SanJuanHistoricAcreage <- SanJuanData %>%
+  dplyr::select("county_name", "year", "value")
+
+SkagitHistoricAcreage <- SkagitData %>%
+  dplyr::select("county_name", "year", "value")
+
+SkamaniaHistoricAcreage <- SkamaniaData %>%
+  dplyr::select("county_name", "year", "value")
+
+SnohomishHistoricAcreage <- SnohomishData %>%
+  dplyr::select("county_name", "year", "value")
+
+SpokaneHistoricAcreage <- SpokaneData %>%
+  dplyr::select("county_name", "year", "value")
+
+StevensHistoricAcreage <- StevensData %>%
+  dplyr::select("county_name", "year", "value")
+
+ThurstonHistoricAcreage <- ThurstonData %>%
+  dplyr::select("county_name", "year", "value")
+
+WahkiakumHistoricAcreage <- WahkiakumData %>%
+  dplyr::select("county_name", "year", "value")
+
+WallaWallaHistoricAcreage <- WallaWallaData %>%
+  dplyr::select("county_name", "year", "value")
+
+WhatcomHistoricAcreage <- WhatcomData %>%
+  dplyr::select("county_name", "year", "value")
+
+WhitmanHistoricAcreage <- WhitmanData %>%
+  dplyr::select("county_name", "year", "value")
+
+YakimaHistoricAcreage <- YakimaData %>%
+  dplyr::select("county_name", "year", "value")
+```
+```{r}
+#Gathered yearly acreage data
+
+##Create new dataframe that only includes the county, year and acreage (value), columns from the original dta dataframe
+HistoricAcreage <- dta %>%
+  dplyr::select(county_name, year, value) #Many instances of years with acreage values but no county listed. Sometimes the same year has more than one acreage listed. Sometimes these repeated years have the same acreage, sometimes it is different.
+
+#Still need help on this
+
+GatheredData <- gather(HistoricAcreage, year, value, -county_name)
+# This is long data, does it need to be wide? Issue with converting from long to wide with spread(), I think due to each county sometimes having the same year listed more than once (examples show show things like counties associated with only one year.)
+
+
+```
+
+
+```{r}
+# For loop gather for mapping multiple individual years of data
+## Notes: Collect an acreage point for each county for each year available. Have all the points for a single year plotted onto the county map. Use same color gradient as average acreage plot. Gather and for loops can automate this process for each year.
+## Sample of a few years, hardcoded just to see what we're working with
+Data1882 <- dta%>%
+  subset(year==1882) #No specific counties listed
+Data2019 <- dta %>%
+  subset(year==2019)#No specific counties listed
+Data2017 <- dta %>% 
+  subset(year==2017) #Multiple acreages listed for the same county (same county, same year, different acreages, may just be different regions within the county). Check sector_desc, domain_desc, util_practice_desc, short_desc
 ```
