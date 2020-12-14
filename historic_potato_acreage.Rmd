@@ -348,23 +348,30 @@ colnames(ShortHistoricAcreage)[1] <- "subregion"
 
 ShortHistoricAcreage$subregion <- tolower(ShortHistoricAcreage$subregion) 
 
-# Adding counties not included in the NASS data set so they will be included on the map, but without any acreage associated with them: Asotin, Chelan, Clallam, Columbia, Ferry, Garfield, Jefferson, Mason, Pacific, Pend Oreille, San Juan, Skamania, Wahkiakum. A single year with NA listed so the rows will add correctly (dummy variable)
-ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("asotin", 1965, NA)
-ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("chelan", 1965, NA)
-ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("clallam", 1965, NA)
-ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("columbia", 1965, NA)
-ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("ferry", 1965, NA)
-ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("garfield", 1965, NA)
-ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("jefferson", 1965, NA)
-ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("mason", 1965, NA)
-ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("pacific", 1965, NA)
-ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("pend oreille", 1965, NA)
-ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("san juan", 1965, NA)
-ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("skamania", 1965, NA)
-ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("wahkiakum", 1965, NA)
-
 #Spreading data, making long data wide so we can make an acreage map for each year
 SpreadAcreage <- spread(ShortHistoricAcreage, Year,Value)
+
+#Converting NA to 0 (For counties included in the data set for years when they did not report any acreage, we will consider that 0 acreages.)
+SpreadAcreage[is.na(SpreadAcreage)] <- 0
+
+# Adding counties not included in the NASS data set so they will be included on the map, but without any acreage associated with them: Asotin, Chelan, Clallam, Columbia, Ferry, Garfield, Jefferson, Mason, Pacific, Pend Oreille, San Juan, Skamania, Wahkiakum. A single year with NA listed so the rows will add correctly (dummy variable) 
+SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("asotin")
+SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("chelan")
+SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("clallam")
+SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("columbia")
+SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("ferry")
+SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("garfield")
+SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("jefferson")
+SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("mason")
+SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("pacific")
+SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("pend oreille")
+SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("san juan")
+SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("skamania")
+SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("wahkiakum")
+
+#Converting acreage columns (columns 2:50) to numeric
+num_cols <- c(2:50)
+SpreadAcreage[,num_cols] <- lapply(SpreadAcreage[,num_cols] , as.numeric)
 
 #Joined county data, wa_county dataframe is map data for the counties in Washington state, SpreadAcreage includes the  potato acreage for each county over time
 JoinedSpreadCounties <- inner_join(wa_county, SpreadAcreage, by = "subregion")
@@ -488,12 +495,12 @@ PNWAcreage1965 <- ggplot(us.states,
  geom_polygon(data=JoinedSpreadCounties ,
                aes(x=long, y=lat, group=group,
                fill=Acreage1965),
-                color="black", lwd=0.3) +
+                color="black", lwd=0.3, alpha=0.7) +
   scale_fill_gradient(low="blue", high="red") +
   theme_classic() + coord_map("conic", lat0 = 30) +
   ggtitle("WA County Potato Acreage 1965") + 
   labs(fill = "Acreage")+
-  labs(caption = "Counties shown in grey did not report any potato acreage for the year or were not included in the NASS data set.") +
+  labs(caption = "Counties shown in grey were not included in the NASS data set.") +
   theme(plot.caption = element_text(hjust = 0))+ 
   theme(panel.background = element_rect(fill = "white", colour = "grey50"))+
  coord_map("bonne", lat0 = 50,
