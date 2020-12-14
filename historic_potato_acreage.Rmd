@@ -465,6 +465,17 @@ JoinedSpreadCounties <- JoinedSpreadCounties %>%
 rename(Acreage2007 = 49)
 JoinedSpreadCounties <- JoinedSpreadCounties %>%
 rename(Acreage2008 =50)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage2009 = 51)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage2010 = 52)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage2011 = 53)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage2012 = 54)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage2014 = 55) 
+
 
 # WA county map with joined data. Color gradient based on 1965 data column
 Acreage1965 <- ggplot() + 
@@ -507,6 +518,40 @@ PNWAcreage1965 <- ggplot(us.states,
             xlim = c(-125, -116),ylim = c(45, 50))+
   xlab("Longitude") +
   ylab("Latitude")
+  
+  
+#Looping map plots
+acreage_cols <- c(7:55)
+plot=list(seq(length(acreage_cols)))
+for (c in seq_along(acreage_cols)){
+  plot[[c]]=ggplotggplot(us.states,
+       aes(x=long, y=lat, group=group))+
+  geom_path(size=0.25)+
+  geom_path(data=ca.provinces, size=0.25,color="grey60")+
+  geom_polygon(data=subset(us.states, NAME_1 %in% c('Idaho', 'Oregon', 'California', 'Utah', 'Montana', 'Nevada', 'Wyoming' )),
+               aes(x=long, y=lat, group=group), fill="white", colour = "grey50", size=0.50)+ 
+ geom_polygon(data=JoinedSpreadCounties ,
+               aes(x=long, y=lat, group=group,
+               fill=acreage_cols),
+                color="black", lwd=0.3, alpha=0.8) +
+  scale_fill_gradient(low="blue", high="red") +
+  theme_classic() + coord_map("conic", lat0 = 30) +
+  ggtitle("WA County Potato Acreage") + 
+  theme(plot.title = element_text(hjust = 0.5)) +
+  labs(fill = "Acreage")+
+  labs(caption = "Counties shown in grey were not included in the NASS data set.") +
+  theme(plot.caption = element_text(hjust = 0.5))+ 
+  theme(panel.background = element_rect(fill = "white", colour = "grey50"))+
+ coord_map("bonne", lat0 = 50,
+            xlim = c(-125, -114),ylim = c(42, 50))+
+  xlab("Longitude") +
+  ylab("Latitude") 
+}
+#Arrange plots
+do.call(grid.arrange, 
+        c(plot, nrow=48, ncol=1,
+          top=("WA County Potato Acreage"),
+          left=("Year")))
  ```
  
 ### Graveyard
