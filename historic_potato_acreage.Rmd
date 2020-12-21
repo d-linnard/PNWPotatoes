@@ -486,6 +486,16 @@ Acreage1965 <- ggplot() +
   scale_fill_gradient(low="blue", high="red") +
   theme_classic() + coord_map("conic", lat0 = 30) +
   ggtitle("WA County Potato Acreage 1965")
+#loop attempt 
+county.graphs <-function(JoinedSpreadCounties, na.rm = TRUE, ...){
+  county_list <- unique(JoinedSpreadCounties$subregion)
+  for (i in seq_along(county_list)) {
+    plot <- ggplot(subset(JoinedSpreadCounties, JoinedSpreadCounties==county.list[i]),
+                   aes(x=long, y=lat, group=group,
+                color="black", lwd=0.3, alpha=0.8))
+    print(plot)
+  }
+}
 
 #Add surrounding states and provinces to WA map
 us <- getData("GADM",country="USA",level=1)
@@ -506,25 +516,51 @@ PNWAcreage1965 <- ggplot(us.states,
  geom_polygon(data=JoinedSpreadCounties ,
                aes(x=long, y=lat, group=group,
                fill=Acreage1965),
-                color="black", lwd=0.3, alpha=0.7) +
+                color="black", lwd=0.3, alpha=0.8) +
   scale_fill_gradient(low="blue", high="red") +
   theme_classic() + coord_map("conic", lat0 = 30) +
   ggtitle("WA County Potato Acreage 1965") + 
+  theme(plot.title = element_text(hjust = 0.5)) +
   labs(fill = "Acreage")+
   labs(caption = "Counties shown in grey were not included in the NASS data set.") +
-  theme(plot.caption = element_text(hjust = 0))+ 
+  theme(plot.caption = element_text(hjust = 0.5))+ 
   theme(panel.background = element_rect(fill = "white", colour = "grey50"))+
  coord_map("bonne", lat0 = 50,
-            xlim = c(-125, -116),ylim = c(45, 50))+
+            xlim = c(-125, -114),ylim = c(42, 50))+
+  xlab("Longitude") +
+  ylab("Latitude") 
+
+# Gather map plots
+JoinedSpreadCounties %>%
+  gather(key="subregion", value="Acreage1965")%>%
+  ggplot(us.states,
+       aes(x=long, y=lat, group=group))+
+  geom_path(size=0.25)+
+  geom_path(data=ca.provinces, size=0.25,color="grey60")+
+  geom_polygon(data=subset(us.states, NAME_1 %in% c('Idaho', 'Oregon', 'California', 'Utah', 'Montana', 'Nevada', 'Wyoming' )),
+               aes(x=long, y=lat, group=group), fill="white", colour = "grey50", size=0.50)+ 
+ geom_polygon(data=JoinedSpreadCounties ,
+               aes(x=long, y=lat, group=group,
+               fill=Acreage1965),
+                color="black", lwd=0.3, alpha=0.8) +
+  scale_fill_gradient(low="blue", high="red") +
+  theme_classic() + coord_map("conic", lat0 = 30) +
+  ggtitle("WA County Potato Acreage 1965") + 
+  theme(plot.title = element_text(hjust = 0.5)) +
+  labs(fill = "Acreage")+
+  labs(caption = "Counties shown in grey were not included in the NASS data set.") +
+  theme(plot.caption = element_text(hjust = 0.5))+ 
+  theme(panel.background = element_rect(fill = "white", colour = "grey50"))+
+ coord_map("bonne", lat0 = 50,
+            xlim = c(-125, -114),ylim = c(42, 50))+
   xlab("Longitude") +
   ylab("Latitude")
-  
-  
+
 #Looping map plots
-acreage_cols <- c(7:55)
+acreage_cols <- c(7:10)
 plot=list(seq(length(acreage_cols)))
 for (c in seq_along(acreage_cols)){
-  plot[[c]]=ggplotggplot(us.states,
+  plot[[c]]=ggplot(us.states,
        aes(x=long, y=lat, group=group))+
   geom_path(size=0.25)+
   geom_path(data=ca.provinces, size=0.25,color="grey60")+
@@ -547,12 +583,9 @@ for (c in seq_along(acreage_cols)){
   xlab("Longitude") +
   ylab("Latitude") 
 }
-#Arrange plots
-do.call(grid.arrange, 
-        c(plot, nrow=48, ncol=1,
-          top=("WA County Potato Acreage"),
-          left=("Year")))
- ```
+
+
+```
  
 ### Graveyard
 - This code chunk does XYZ
