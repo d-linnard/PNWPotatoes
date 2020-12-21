@@ -1,0 +1,712 @@
+---
+title: "Historic potato yield WA"
+author: "El Nazarov"
+date: "9/16/2020"
+output: html_document
+---
+
+
+###Load libraries
+``` {r}
+library(tidyverse)
+library(data.table)
+```
+
+###Read in crop yeild file
+```{r}
+dta <- read_csv("Documents/GitHub/PotatoAcerageAndYields/WA_potato_yield_revised.csv")
+view(dta)
+```
+
+###Inspect data 
+```{r}
+str(dta) #structure
+```
+
+```{r}
+table(dta$Year) #number of entries per year
+```
+
+###Summary statistics
+```{r}
+class(dta$value) #checking class of value
+```
+
+```{r}
+summary(dta$Value) #summaries of the yeild values
+```
+
+```{r}
+duplicates_dta <-duplicated(dta) #determine if duplicate data is detected
+isTRUE(duplicates_dta)
+```
+
+###Plot data
+```{r}
+# Plot size
+options(repr.plot.width = 20, repr.plot.height = 10)
+# Plot
+dta %>%
+group_by(Year) %>%
+select(Year, Value, County) %>%
+ggplot(aes(x=Year, y=Value)) +
+geom_jitter(aes(colour = County), size=1, alpha=3/5) +
+theme_classic() + 
+theme(axis.title.x=element_text(size=16, face="bold"),
+      axis.text.x=element_text(size=14),
+      axis.title.y=element_text(size=16,face="bold"),
+      axis.text.y=element_text(size=14)) +
+scale_color_hue(l=70, c=40) +
+labs(x="Time (1965-2015)",
+    y="Acres")  +
+geom_smooth(method = "loess", span = 0.1, se = FALSE, color="grey40")
+```
+## Washington counties mapping
+
+### Load packages
+```{r, message=F, echo=F}
+# Packages for graphics
+library(ggplot2)
+library(gridExtra)
+library(ggExtra)
+library(naniar) # To visualize missing data
+library(Hmisc) # To tabulate a summary of the data
+library(maps) # for maps
+library(knitr) # format tables
+library(ggplot2) # For diagnostics
+# Packages for data wrangling
+library(dplyr)
+library(tidyr)
+library(reshape2)
+# Packages for inference /presentation of inference*
+library(stargazer)
+library(plm) # For estimating fixed and random effect model
+library(lmtest)
+library(sandwich) # for robust standard errors
+library(knitr)
+#opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
+```
+
+### Load historic potato acreage data
+```{r}
+dta #Load in yeild
+
+df <- dta #Rename dataframe
+
+```
+
+### Summary of dataframe
+```{r}
+
+str(df) #Checking structure 
+
+summary(df) #Summary of dataframe
+
+```
+
+### Check for missing values
+```{r}
+is.na(df)
+```
+### Open map data
+```{r message=F, warning=F, fig.cap="Potato acreage in Washington state over time", echo=FALSE}
+MainStates <- map_data("state")
+```
+# Average acreage of WA counties over time
+```{r}
+# Automate county level average for each county
+MuYeildDf <- df %>%
+  group_by(County) %>%
+  summarise('MuYeild' = mean(Value, na.rm = TRUE)) %>%
+  dplyr::select(MuYeild, County) 
+#Need to manually add in Garfield county with 0 yeild (not included on original dataframe, did not have any potato acreage listed)
+
+#Check which counties are missing data
+
+MuAcreageDf[nrow(MuAcreageDf) + 1,] = list(0, "garfield")
+#Delete first row in MuAcreageDf that is blank in the county row and the average of all the counties in the other row and remove Other(combined)counties row
+MuAcreageDf <- MuAcreageDf[-c(1,25),]
+#Rename county column in MuAcreageDf to "subregion" to match the map county column name and change the MuAcreageDf counties to all lowercase to match the map dataframe so they can be joined
+colnames(MuAcreageDf)[2] <- "subregion"
+MuAcreageDf$subregion <- tolower(MuAcreageDf$subregion)
+#Round MuAcres to a whole number
+MuAcreageDf[,-2] <- round(MuAcreageDf[,-2],0)
+# Coerce Value to numeric
+as.numeric(as.character(dta$Value))
+class(dta)
+dta[county_name == "COLUMBIA",] # what does (D) mean?- Not enough farms to enable anonymity (pg.X in doc Y)
+```
+### WA county map
+```{r}
+# Base WA county map
+states <- map_data("state")
+dim(states)
+wa_df <- subset(states, region == "washington")
+head(wa_df)
+counties <- map_data("county")
+wa_county <- subset(counties, region == "washington")
+head(wa_county)
+wa_base <- ggplot(data = wa_df,
+                  mapping = aes(x = long,
+                                y = lat,
+                                group = 
+group,
+fill = subregion)) +
+coord_fixed(1.3) +
+geom_polygon(color = "black", fill = "gray")
+wa_base + theme_classic() +
+geom_polygon(data = wa_county, fill = NA, color = "white") +
+geom_polygon(color = "black", fill = NA)  # get the state border back on top
+#Joined county data, wa_county dataframe is map data for the counties in Washington state, MuAcreageDf includes the average potato acreage for each county over time
+JoinedCounties <- inner_join(wa_county, MuAcreageDf, by = "subregion")
+# WA county map with joined data. Color gradient based on MuAcres column
+MuAcreagePlot <- ggplot() + 
+  geom_polygon(data=JoinedCounties ,
+               aes(x=long, y=lat, group=group,
+               fill=MuAcres),
+                color="black", lwd=0.3) +
+  scale_fill_gradient(low="blue", high="red") +
+  theme_classic() + coord_map("conic", lat0 = 30) +
+  ggtitle("WA County Historic Potato Acreage Averages 1882-2019")
+#Add surrounding states and provinces to WA map
+us <- getData("GADM",country="USA",level=1)
+canada <- getData("GADM",country="CAN",level=1)
+states <- c('Idaho', 'Oregon')
+provinces <- c("British Columbia", "Alberta")
+# PNW
+us.states <- us[us$NAME_1 %in% states,]
+# Canada
+ca.provinces <- canada[canada$NAME_1 %in% provinces,]
+#WA average map with surrounding states and provinces
+PNWAcreage <- ggplot(us.states,
+       aes(x=long, y=lat, group=group))+
+  geom_path(size=0.25)+
+  geom_path(data=ca.provinces, size=0.25,color="grey60")+
+  geom_polygon(data=subset(us.states, NAME_1 %in% c('Idaho', 'Oregon')),
+               aes(x=long, y=lat, group=group), fill="white", colour = "grey50", size=0.50)+ 
+ geom_polygon(data=JoinedCounties, #Start of MuAcreagePlot
+               aes(x=long, y=lat, group=group,
+               fill=MuAcres),
+                color="black", lwd=0.3) +
+  scale_fill_gradient(low="blue", high="red") +
+  theme_classic() + coord_map("conic", lat0 = 30) +
+  ggtitle("WA County Historic Potato Acreage Averages 1882-2019") + 
+  labs(fill = "Average Acreage")+
+  labs(caption = "Counties shown in grey were not included in NASS dataset to protect farm anonymity.") +
+  theme(plot.caption = element_text(hjust = 0))+ #End of MuAcreagePlot
+  theme(panel.background = element_rect(fill = "white", colour = "grey50"))+
+ coord_map("bonne", lat0 = 50,
+            xlim = c(-127, -112),ylim = c(41, 50))+
+  xlab("Longitude") +
+  ylab("Latitude") 
+```
+```{r}
+# Reading in potato acreage data from NASS from 1965-2015 and selecting year, county and value (acreage)
+ShortHistoricAcreageCSV <- read.csv(file = 'HistoricPotatoData.csv')
+ShortHistoricAcreage <- dplyr::select(ShortHistoricAcreageCSV, "County", "Year", "Value") 
+# Delete rows that are for combined counties
+ShortHistoricAcreage <- ShortHistoricAcreage[!grepl("COMBINED",ShortHistoricAcreage$County),]
+#Coerce Value column from character to numeric
+ShortHistoricAcreage$Value = as.numeric(gsub(",", "", ShortHistoricAcreage$Value))
+ShortHistoricAcreage$Value
+summary(as.numeric(ShortHistoricAcreage$Value))
+lapply(ShortHistoricAcreage, unique)
+#Rename county column in ShortHistoricAcreage to "subregion" to match the map county column name and change the ShortHistoricAcreage counties to all lowercase to match the map dataframe so they can be joined
+colnames(ShortHistoricAcreage)[1] <- "subregion"
+ShortHistoricAcreage$subregion <- tolower(ShortHistoricAcreage$subregion) 
+#Spreading data, making long data wide so we can make an acreage map for each year
+SpreadAcreage <- spread(ShortHistoricAcreage, Year,Value)
+#Converting NA to 0 (For counties included in the data set for years when they did not report any acreage, we will consider that 0 acreages.)
+SpreadAcreage[is.na(SpreadAcreage)] <- 0
+# Adding counties not included in the NASS data set so they will be included on the map, but without any acreage associated with them: Asotin, Chelan, Clallam, Columbia, Ferry, Garfield, Jefferson, Mason, Pacific, Pend Oreille, San Juan, Skamania, Wahkiakum. A single year with NA listed so the rows will add correctly (dummy variable) 
+SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("asotin")
+SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("chelan")
+SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("clallam")
+SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("columbia")
+SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("ferry")
+SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("garfield")
+SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("jefferson")
+SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("mason")
+SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("pacific")
+SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("pend oreille")
+SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("san juan")
+SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("skamania")
+SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("wahkiakum")
+#Converting acreage columns (columns 2:50) to numeric
+num_cols <- c(2:50)
+SpreadAcreage[,num_cols] <- lapply(SpreadAcreage[,num_cols] , as.numeric)
+#Joined county data, wa_county dataframe is map data for the counties in Washington state, SpreadAcreage includes the  potato acreage for each county over time
+JoinedSpreadCounties <- inner_join(wa_county, SpreadAcreage, by = "subregion")
+# Renamed column names for the year data so they can be used to fill the color gradient for the maps 
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1965 = 7)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1966 = 8)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1967 = 9)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1968 = 10)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1969 = 11)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1970 = 12)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1971 = 13)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1972 = 14)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1973 = 15)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1974 = 16)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1975 = 17)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1976 = 18)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1977 = 19)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1978 = 20)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1979 = 21)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1980 = 22)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1981 = 23)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1982 = 24)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1983 = 25)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1984 = 26)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1985 = 27)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1986 = 28)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1987 = 29)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1988 = 30)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1989 = 31)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1990 = 32)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1991 = 33)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1992 = 34)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1993 = 35)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1994 = 36)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1995 = 37)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1996 = 38)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1997 = 39)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1998 = 40)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1999 = 41)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage2000 = 42)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage2001 = 43)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage2002 = 44)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage2003 = 45)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage2004 = 46)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage2005 = 47)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage2006 = 48)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage2007 = 49)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage2008 =50)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage2009 = 51)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage2010 = 52)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage2011 = 53)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage2012 = 54)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage2014 = 55) 
+# WA county map with joined data. Color gradient based on 1965 data column
+Acreage1965 <- ggplot() + 
+  geom_polygon(data=JoinedSpreadCounties ,
+               aes(x=long, y=lat, group=group,
+               fill=Acreage1965),
+                color="black", lwd=0.3) +
+  scale_fill_gradient(low="blue", high="red") +
+  theme_classic() + coord_map("conic", lat0 = 30) +
+  ggtitle("WA County Potato Acreage 1965")
+#Add surrounding states and provinces to WA map
+us <- getData("GADM",country="USA",level=1)
+canada <- getData("GADM",country="CAN",level=1)
+states <- c('Idaho', 'Oregon', 'California', 'Utah', 'Montana', 'Nevada', 'Wyoming')
+provinces <- c("British Columbia", "Alberta")
+# PNW
+us.states <- us[us$NAME_1 %in% states,]
+# Canada
+ca.provinces <- canada[canada$NAME_1 %in% provinces,]
+#WA 1965 map with surrounding states and provinces
+PNWAcreage1965 <- ggplot(us.states,
+       aes(x=long, y=lat, group=group))+
+  geom_path(size=0.25)+
+  geom_path(data=ca.provinces, size=0.25,color="grey60")+
+  geom_polygon(data=subset(us.states, NAME_1 %in% c('Idaho', 'Oregon', 'California', 'Utah', 'Montana', 'Nevada', 'Wyoming' )),
+               aes(x=long, y=lat, group=group), fill="white", colour = "grey50", size=0.50)+ 
+ geom_polygon(data=JoinedSpreadCounties ,
+               aes(x=long, y=lat, group=group,
+               fill=Acreage1965),
+                color="black", lwd=0.3, alpha=0.7) +
+  scale_fill_gradient(low="blue", high="red") +
+  theme_classic() + coord_map("conic", lat0 = 30) +
+  ggtitle("WA County Potato Acreage 1965") + 
+  labs(fill = "Acreage")+
+  labs(caption = "Counties shown in grey were not included in the NASS data set.") +
+  theme(plot.caption = element_text(hjust = 0))+ 
+  theme(panel.background = element_rect(fill = "white", colour = "grey50"))+
+ coord_map("bonne", lat0 = 50,
+            xlim = c(-125, -116),ylim = c(45, 50))+
+  xlab("Longitude") +
+  ylab("Latitude")
+  
+  
+#Looping map plots
+acreage_cols <- c(7:55)
+plot=list(seq(length(acreage_cols)))
+for (c in seq_along(acreage_cols)){
+  plot[[c]]=ggplotggplot(us.states,
+       aes(x=long, y=lat, group=group))+
+  geom_path(size=0.25)+
+  geom_path(data=ca.provinces, size=0.25,color="grey60")+
+  geom_polygon(data=subset(us.states, NAME_1 %in% c('Idaho', 'Oregon', 'California', 'Utah', 'Montana', 'Nevada', 'Wyoming' )),
+               aes(x=long, y=lat, group=group), fill="white", colour = "grey50", size=0.50)+ 
+ geom_polygon(data=JoinedSpreadCounties ,
+               aes(x=long, y=lat, group=group,
+               fill=acreage_cols),
+                color="black", lwd=0.3, alpha=0.8) +
+  scale_fill_gradient(low="blue", high="red") +
+  theme_classic() + coord_map("conic", lat0 = 30) +
+  ggtitle("WA County Potato Acreage") + 
+  theme(plot.title = element_text(hjust = 0.5)) +
+  labs(fill = "Acreage")+
+  labs(caption = "Counties shown in grey were not included in the NASS data set.") +
+  theme(plot.caption = element_text(hjust = 0.5))+ 
+  theme(panel.background = element_rect(fill = "white", colour = "grey50"))+
+ coord_map("bonne", lat0 = 50,
+            xlim = c(-125, -114),ylim = c(42, 50))+
+  xlab("Longitude") +
+  ylab("Latitude") 
+}
+#Arrange plots
+do.call(grid.arrange, 
+        c(plot, nrow=48, ncol=1,
+          top=("WA County Potato Acreage"),
+          left=("Year")))
+ ```
+ 
+### Graveyard
+- This code chunk does XYZ
+-This code gives a county map of WA, not using ggplot plot_usmap(regions = "counties", include = c("WA"))
+- Good example on how to color-code based on value ranges: 
+ scale_color_manual(name = "value",
+                     values = c("(-Inf,10]" = "red",
+                                  "(10,100]" = "yellow",
+                                  "(100, Inf]" = "black"),
+                     labels = c("Acreage <= 10", "10 < Acreage <= 100", "Acreage > 100"))
+```{r}
+dta %>%
+  dplyr::select('AverageAcerage' = mean(acerage)) # package::function()
+ ``` 
+# Outlier plot
+
+```{r}
+dta %>%
+  group_by(year) %>%
+  select(year, value, county_name) %>%
+  ggplot(aes(x=year, y=value)) +
+  geom_point(aes(colour = cut(value, c(-Inf, 10, 100, Inf))),
+             size = 1)+
+  scale_color_manual(name = "value",
+                     values = c("(-Inf,10]" = "red",
+                                  "(10,100]" = "yellow",
+                                  "(100, Inf]" = "black"),
+                     labels = c("Acreage <= 10", "10 < Acreage <= 100", "Acreage > 100")) +
+  theme_classic() +
+  theme(axis.title.x=element_text(size=16, face="bold"),
+        axis.text.x=element_text(size=14),
+        axis.title.y=element_text(size=16,face="bold"),
+        axis.text.y=element_text(size=14)) +
+  labs(x="Time (1882-2019)",
+       y="Acres") +
+  ggtitle("WA County Historic Potato Acreages") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  geom_smooth(method = "loess", span = 0.1, se = FALSE, color="grey40")+
+  theme(legend.position = "right")  
+### Average acreage per county, counties with single digit acreages have notes
+# Adams
+AdamsData <- subset(dta, county_name == 'ADAMS') 
+AdamsAverageAcreage <- mean(AdamsData$value, na.rm = TRUE)
+# Asotin
+AsotinData <- subset(dta, county_name == 'ASOTIN')
+AsotinAverageAcreage <- mean(AsotinData$value, na.rm = TRUE)
+### Asotin only has 1 acre listed for 2 years of recorded data?
+# Benton
+BentonData <- subset(dta, county_name == 'BENTON')
+BentonAverageAcreage <- mean(BentonData$value, na.rm = TRUE)
+# Chelan
+ChelanData <- subset(dta, county_name == 'CHELAN')
+ChelanAverageAcreage <- mean(ChelanData$value, na.rm = TRUE)
+### Weird values too, only 1 or 2 acres listed
+# Clallam
+ClallamData <- subset(dta, county_name == 'CLALLAM')
+ClallamAverageAcreage <- mean(ClallamData$value, na.rm = TRUE)
+### Weird low acreages 
+# Clark
+ClarkData <- subset(dta, county_name == 'CLARK')
+ClarkAverageAcreage <- mean(ClarkData$value, na.rm = TRUE)
+# Columbia
+ColumbiaData <- subset(dta, county_name == 'COLUMBIA')
+ColumbiaAverageAcreage <- mean(ColumbiaData$value, na.rm = TRUE)
+### All values N/A or listed as "D"
+# Cowlitz
+CowlitzData<- subset(dta, county_name == 'COWLITZ')
+CowlitzAverageAcreage <- mean(CowlitzData$value, na.rm = TRUE)
+# Douglas
+DouglasData <- subset(dta, county_name == 'DOUGLAS')
+DouglasAverageAcreage <- mean(DouglasData$value, na.rm = TRUE)
+# Ferry
+FerryData <- subset(dta, county_name == 'FERRY')
+FerryAverageAcreage <- mean(FerryData$value, na.rm = TRUE)
+### Only 1 acre listed
+# Franklin
+FranklinData <- subset(dta, county_name == 'FRANKLIN')
+FranklinAverageAcreage <- mean(FranklinData$value, na.rm = TRUE)
+# Garfield, none
+GarfieldAverageAcreage <- 0
+# Grant
+GrantData <- subset(dta, county_name == 'GRANT')
+GrantAverageAcreage <- mean(GrantData$value, na.rm = TRUE)
+# Grays Harbor
+GraysHarborData <- subset(dta, county_name == 'GRAYS HARBOR')
+GraysHarborAverageAcreage <- mean(GraysHarborData$value, na.rm = TRUE)
+# Island
+IslandData <- subset(dta, county_name == 'ISLAND')
+IslandAverageAcreage <- mean(IslandData$value, na.rm = TRUE)
+# Jefferson
+JeffersonData <- subset(dta, county_name == 'JEFFERSON')
+JeffersonAverageAcreage <- mean(JeffersonData$value, na.rm = TRUE)
+### Low acreage
+# King
+KingData <- subset(dta, county_name == 'KING')
+KingAverageAcreage <- mean(KingData$value, na.rm = TRUE)
+# Kitsap
+KitsapData <- subset(dta, county_name == 'KITSAP')
+KitsapAverageAcreage <- mean(KitsapData$value, na.rm = TRUE)
+### Low acreage
+# Kittitas
+KittitasData <- subset(dta, county_name == 'KITTITAS')
+KittitasAverageAcreage <- mean(KittitasData$value, na.rm = TRUE)
+# Klickitat
+KlickitatData <- subset(dta, county_name == 'KLICKITAT')
+KlickitatAverageAcreage <- mean(KlickitatData$value, na.rm = TRUE)
+# Lewis
+LewisData <- subset(dta, county_name == 'LEWIS')
+LewisAverageAcreage <- mean(LewisData$value, na.rm = TRUE)
+### Low acreage
+# Lincoln
+LincolnData <- subset(dta, county_name == 'LINCOLN')
+LincolnAverageAcreage <- mean(LincolnData$value, na.rm = TRUE)
+# Mason
+MasonData <- subset(dta, county_name == 'MASON')
+MasonAverageAcreage <- mean(MasonData$value, na.rm = TRUE)
+### Low acreage
+# Okanogan
+OkanoganData <- subset(dta, county_name == 'OKANOGAN')
+OkanoganAverageAcreage <- mean(OkanoganData$value, na.rm = TRUE)
+# Pacific
+PacificData <- subset(dta, county_name == 'PACIFIC')
+PacificAverageAcreage <- mean(PacificData$value, na.rm = TRUE)
+### Low acreage
+# Pend Oreille
+PendOreilleData <- subset(dta, county_name == 'PEND OREILLE')
+PendOreilleAverageAcreage <- mean(PendOreilleData$value, na.rm = TRUE)
+### Low acreage
+# Pierce
+PierceData <- subset(dta, county_name == 'PIERCE')
+PierceAverageAcreage <- mean(PierceData$value, na.rm = TRUE)
+# San Juan
+SanJuanData <- subset(dta, county_name == 'SAN JUAN')
+SanJuanAverageAcreage <- mean(SanJuanData$value, na.rm = TRUE)
+### Low acreage
+# Skagit
+SkagitData <- subset(dta, county_name == 'SKAGIT')
+SkagitAverageAcreage <- mean(SkagitData$value, na.rm = TRUE)
+# Skamania
+SkamaniaData <- subset(dta, county_name == 'SKAMANIA')
+SkamaniaAverageAcreage <- mean(SkamaniaData$value, na.rm = TRUE)
+### Low acreage
+# Snohomish
+SnohomishData<- subset(dta, county_name == 'SNOHOMISH')
+SnohomishAverageAcreage <- mean(SnohomishData$value, na.rm = TRUE)
+# Spokane
+SpokaneData <- subset(dta, county_name == 'SPOKANE')
+SpokaneAverageAcreage <- mean(SpokaneData$value, na.rm = TRUE)
+# Stevens
+StevensData <- subset(dta, county_name == 'STEVENS')
+StevensAverageAcreage <- mean(StevensData$value, na.rm = TRUE)
+# Thurston
+ThurstonData <- subset(dta, county_name == 'THURSTON')
+ThurstonAverageAcreage <- mean(ThurstonData$value, na.rm = TRUE)
+### Low acreage
+# Wahkiakum
+WahkiakumData <- subset(dta, county_name == 'WAHKIAKUM')
+WahkiakumAverageAcreage <- mean(WahkiakumData$value, na.rm = TRUE)
+### Low acreage
+# Walla Walla
+WallaWallaData <- subset(dta, county_name == 'WALLA WALLA')
+WallaWallaAverageAcreage <- mean(WallaWallaData$value, na.rm = TRUE)
+# Whatcom
+WhatcomData <- subset(dta, county_name == 'WHATCOM')
+WhatcomAverageAcreage <- mean(WhatcomData$value, na.rm = TRUE)
+# Whitman
+WhitmanData <- subset(dta, county_name == 'WHITMAN')
+WhitmanAverageAcreage <- mean(WhitmanData$value, na.rm = TRUE)
+# Yakima
+YakimaData<- subset(dta, county_name == 'YAKIMA')
+YakimaAverageAcreage <- mean(YakimaData$value, na.rm = TRUE)
+# Other/unlisted
+OtherUnlistedData <- subset(dta, county_name == '')
+OtherUnlistedAverageAcreage <- mean(OtherUnlistedData$value, na.rm = TRUE)
+### Dataframe of means
+WACountyMeans <- data.frame(AdamsAverageAcreageele, AsotinAverageAcreage, BentonAverageAcreage, ChelanAverageAcreage, ClallamAverageAcreage, ClarkAverageAcreage, ColumbiaAverageAcreage, CowlitzAverageAcreage, DouglasAverageAcreage, FerryAverageAcreage, FranklinAverageAcreage, GarfieldAverageAcreage, GrantAverageAcreage, GraysHarborAverageAcreage, IslandAverageAcreage, JeffersonAverageAcreage, KingAverageAcreage, KitsapAverageAcreage, KittitasAverageAcreage, KlickitatAverageAcreage, LewisAverageAcreage, LincolnAverageAcreage, MasonAverageAcreage, OkanoganAverageAcreage, PacificAverageAcreage, PendOreilleAverageAcreage, PierceAverageAcreage, SanJuanAverageAcreage, SkagitAverageAcreage, SkamaniaAverageAcreage, SnohomishAverageAcreage, SpokaneAverageAcreage, StevensAverageAcreage, ThurstonAverageAcreage, WahkiakumAverageAcreage, WallaWallaAverageAcreage, WhatcomAverageAcreage, WhitmanAverageAcreage, YakimaAverageAcreage, OtherUnlistedAverageAcreage)
+#How to use aggregate example:
+  #Subset county data
+WACountyData <- aggregate(dta[, "value"],
+                          by = list(dta$county_name),
+                          FUN = mean,
+                          na.rm = TRUE,
+                          data = dta) 
+```
+```{r}
+#Extracted county acreages
+AcreageWithoutCounties <- subset(HistoricAcreage, county_name == '')
+AdamsHistoricAcreage <- AdamsData %>%
+  dplyr::select("county_name", "year", "value")
+AsotinHistoricAcreage <- AsotinData %>%
+  dplyr::select("county_name", "year", "value")
+BentonHistoricAcreage <- BentonData %>%
+  dplyr::select("county_name", "year", "value")
+ChelanHistoricAcreage <- ChelanData %>%
+  dplyr::select("county_name", "year", "value")
+ClallamHistoricAcreage <- ClallamData %>%
+  dplyr::select("county_name", "year", "value")
+ClarkHistoricAcreage <- ClarkData %>%
+  dplyr::select("county_name", "year", "value")
+ColumbiaHistoricAcreage <- ColumbiaData %>%
+  dplyr::select("county_name", "year", "value")
+CowlitzHistoricAcreage <- CowlitzData %>%
+  dplyr::select("county_name", "year", "value")
+DouglasHistoricAcreage <- DouglasData %>%
+  dplyr::select("county_name", "year", "value")
+FerryHistoricAcreage <- FerryData %>%
+  dplyr::select("county_name", "year", "value")
+FranklinHistoricAcreage <- FranklinData %>%
+  dplyr::select("county_name", "year", "value")
+GrantHistoricAcreage <- GrantData %>%
+  dplyr::select("county_name", "year", "value")
+GraysHarborHistoricAcreage <- GraysHarborData %>%
+  dplyr::select("county_name", "year","value")
+IslandHistoricAcreage <- IslandData %>%
+  dplyr::select("county_name", "year", "value")
+JeffersonHistoricAcreage <- JeffersonData %>%
+  dplyr::select("county_name", "year", "value")
+KingHistoricAcreage <- KingData %>%
+  dplyr::select("county_name", "year", "value")
+KitsapHistoricAcreage <- KitsapData %>%
+  dplyr::select("county_name", "year", "value")
+KittitasHistoricAcreage <- KittitasData %>%
+  dplyr::select("county_name", "year", "value")
+KlickitatHistoricAcreage <- KlickitatData %>%
+  dplyr::select("county_name", "year", "value")
+LewisHistoricAcreage <- LewisData %>%
+  dplyr::select("county_name", "year", "value")
+LincolnHistoricAcreage <- LincolnData %>%
+  dplyr::select("county_name", "year", "value")
+MasonHistoricAcreage <- MasonData %>%
+  dplyr::select("county_name", "year", "value")
+OkanoganHistoricAcreage <- OkanoganData %>%
+  dplyr::select("county_name", "year", "value")
+PacificHistoricAcreage <- PacificData %>%
+  dplyr::select("county_name", "year", "value")
+PendOreilleHistoricAcreage <- PendOreilleData %>%
+  dplyr::select("county_name", "year", "value")
+PierceHistoricAcreage <- PierceData %>%
+  dplyr::select("county_name", "year", "value")
+SanJuanHistoricAcreage <- SanJuanData %>%
+  dplyr::select("county_name", "year", "value")
+SkagitHistoricAcreage <- SkagitData %>%
+  dplyr::select("county_name", "year", "value")
+SkamaniaHistoricAcreage <- SkamaniaData %>%
+  dplyr::select("county_name", "year", "value")
+SnohomishHistoricAcreage <- SnohomishData %>%
+  dplyr::select("county_name", "year", "value")
+SpokaneHistoricAcreage <- SpokaneData %>%
+  dplyr::select("county_name", "year", "value")
+StevensHistoricAcreage <- StevensData %>%
+  dplyr::select("county_name", "year", "value")
+ThurstonHistoricAcreage <- ThurstonData %>%
+  dplyr::select("county_name", "year", "value")
+WahkiakumHistoricAcreage <- WahkiakumData %>%
+  dplyr::select("county_name", "year", "value")
+WallaWallaHistoricAcreage <- WallaWallaData %>%
+  dplyr::select("county_name", "year", "value")
+WhatcomHistoricAcreage <- WhatcomData %>%
+  dplyr::select("county_name", "year", "value")
+WhitmanHistoricAcreage <- WhitmanData %>%
+  dplyr::select("county_name", "year", "value")
+YakimaHistoricAcreage <- YakimaData %>%
+  dplyr::select("county_name", "year", "value")
+```
+```{r}
+#Gathered yearly acreage data
+##Create new dataframe that only includes the county, year and acreage (value), columns from the original dta dataframe
+HistoricAcreage <- dta %>%
+  dplyr::select(county_name, year, value) #Many instances of years with acreage values but no county listed. Sometimes the same year has more than one acreage listed. Sometimes these repeated years have the same acreage, sometimes it is different.
+#Still need help on this
+GatheredData <- gather(HistoricAcreage, year, value, -county_name)
+# This is long data, does it need to be wide? Issue with converting from long to wide with spread(), I think due to each county sometimes having the same year listed more than once (examples show show things like counties associated with only one year.)
+```
+
+
+```{r}
+# For loop gather for mapping multiple individual years of data
+## Notes: Collect an acreage point for each county for each year available. Have all the points for a single year plotted onto the county map. Use same color gradient as average acreage plot. Gather and for loops can automate this process for each year.
+## Sample of a few years, hardcoded just to see what we're working with
+Data1882 <- dta%>%
+  subset(year==1882) #No specific counties listed
+Data2019 <- dta %>%
+  subset(year==2019)#No specific counties listed
+Data2017 <- dta %>% 
+  subset(year==2017) #Multiple acreages listed for the same county (same county, same year, different acreages, may just be different regions within the county). Check sector_desc, domain_desc, util_practice_desc, short_desc
+```
+
+
+
+
+
+
+
+
+Boneyard:
+```{r}
+tolower(colnames(dta)) #make column names lower case
+str(dta)
+```
