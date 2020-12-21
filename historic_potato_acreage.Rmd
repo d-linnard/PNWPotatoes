@@ -581,7 +581,8 @@ for (c in seq_along(acreage_cols)){
  coord_map("bonne", lat0 = 50,
             xlim = c(-125, -114),ylim = c(42, 50))+
   xlab("Longitude") +
-  ylab("Latitude") 
+  ylab("Latitude") +
+  facet_wrap(~ acreage_cols, ncol= 4, scales="free")
 }
 
 
