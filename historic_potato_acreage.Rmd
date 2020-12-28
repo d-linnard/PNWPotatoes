@@ -348,154 +348,47 @@ colnames(ShortHistoricAcreage)[1] <- "subregion"
 
 ShortHistoricAcreage$subregion <- tolower(ShortHistoricAcreage$subregion) 
 
-#Spreading data, making long data wide so we can make an acreage map for each year
-SpreadAcreage <- spread(ShortHistoricAcreage, Year,Value)
+#MIGHT NOT NEED TO DO. Spreading data, making long data wide so we can make an acreage map for each year
+#SpreadAcreage <- spread(ShortHistoricAcreage, Year,Value)
 
-#Converting NA to 0 (For counties included in the data set for years when they did not report any acreage, we will consider that 0 acreages.)
-SpreadAcreage[is.na(SpreadAcreage)] <- 0
+#Converting NA to 0 (For counties included in the data set for years when they did not report any acreage, we will consider that 0 acreages.) In this case, 0 is more of a place holder since we don't necessarily know that 0 acreages were reported for the county, we just know that nothing was reported for the county in years we designate with the 0 place holder.
+#SpreadAcreage[is.na(SpreadAcreage)] <- 0
 
 # Adding counties not included in the NASS data set so they will be included on the map, but without any acreage associated with them: Asotin, Chelan, Clallam, Columbia, Ferry, Garfield, Jefferson, Mason, Pacific, Pend Oreille, San Juan, Skamania, Wahkiakum. A single year with NA listed so the rows will add correctly (dummy variable) 
-SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("asotin")
-SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("chelan")
-SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("clallam")
-SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("columbia")
-SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("ferry")
-SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("garfield")
-SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("jefferson")
-SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("mason")
-SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("pacific")
-SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("pend oreille")
-SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("san juan")
-SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("skamania")
-SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("wahkiakum")
+ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("asotin", 1965, NA)
+ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("chelan", 1965, NA)
+ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("clallam", 1965, NA)
+ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("columbia", 1965, NA)
+ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("ferry", 1965, NA)
+ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("garfield", 1965, NA)
+ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("jefferson", 1965, NA)
+ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("mason", 1965, NA)
+ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("pacific", 1965, NA)
+ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("pend oreille", 1965, NA)
+ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("san juan", 1965, NA)
+ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("skamania", 1965, NA)
+ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("wahkiakum", 1965, NA)
 
-#Converting acreage columns (columns 2:50) to numeric
-num_cols <- c(2:50)
-SpreadAcreage[,num_cols] <- lapply(SpreadAcreage[,num_cols] , as.numeric)
 
-#Joined county data, wa_county dataframe is map data for the counties in Washington state, SpreadAcreage includes the  potato acreage for each county over time
-JoinedSpreadCounties <- inner_join(wa_county, SpreadAcreage, by = "subregion")
+#Joined county data, wa_county dataframe is map data for the counties in Washington state, ShortHistoricAcreage includes the  potato acreage for each county over time
+JoinedCounties <- inner_join(wa_county, ShortHistoricAcreage, by = "subregion")
 
-# Renamed column names for the year data so they can be used to fill the color gradient for the maps 
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage1965 = 7)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage1966 = 8)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage1967 = 9)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage1968 = 10)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage1969 = 11)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage1970 = 12)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage1971 = 13)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage1972 = 14)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage1973 = 15)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage1974 = 16)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage1975 = 17)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage1976 = 18)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage1977 = 19)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage1978 = 20)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage1979 = 21)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage1980 = 22)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage1981 = 23)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage1982 = 24)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage1983 = 25)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage1984 = 26)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage1985 = 27)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage1986 = 28)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage1987 = 29)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage1988 = 30)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage1989 = 31)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage1990 = 32)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage1991 = 33)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage1992 = 34)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage1993 = 35)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage1994 = 36)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage1995 = 37)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage1996 = 38)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage1997 = 39)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage1998 = 40)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage1999 = 41)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage2000 = 42)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage2001 = 43)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage2002 = 44)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage2003 = 45)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage2004 = 46)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage2005 = 47)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage2006 = 48)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage2007 = 49)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage2008 =50)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage2009 = 51)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage2010 = 52)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage2011 = 53)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage2012 = 54)
-JoinedSpreadCounties <- JoinedSpreadCounties %>%
-rename(Acreage2014 = 55) 
-
+#Gather plots
+GatheredAcreage <- JoinedCounties %>%
+gather(subregion, Value) %>%
+    mutate(series = factor(subregion,
+                           levels = c('Acreage1965', 'Acreage1966', 'Acreage1967', 'Acreage1968', 'Acreage1969', 'Acreage1970', 'Acreage1971', 'Acreage1972', 'Acreage1973', 'Acreage1974', 'Acreage1975', 'Acreage1976', 'Acreage1977', 'Acreage1978', 'Acreage1979', 'Acreage1980', 'Acreage1981', 'Acreage1982', 'Acreage1983', 'Acreage1984', 'Acreage1985', 'Acreage1986', 'Acreage1987', 'Acreage1988', 'Acreage1989', 'Acreage1990', 'Acreage1991', 'Acreage1992', 'Acreage1993', 'Acreage1994', 'Acreage1995', 'Acreage1996', 'Acreage1997', 'Acreage1998', 'Acreage1999', 'Acreage2000', 'Acreage2001', 'Acreage2002', 'Acreage2003', 'Acreage2004', 'Acreage2005', 'Acreage2006', 'Acreage2007', 'Acreage2008', 'Acreage2009', 'Acreage2010', 'Acreage2011', 'Acreage2012', 'Acreage2014')))
 
 # WA county map with joined data. Color gradient based on 1965 data column
 Acreage1965 <- ggplot() + 
   geom_polygon(data=JoinedSpreadCounties ,
                aes(x=long, y=lat, group=group,
                fill=Acreage1965),
-                color="black", lwd=0.3) +
+                color="black", lwd=0.3, alpha=0.8) +
   scale_fill_gradient(low="blue", high="red") +
   theme_classic() + coord_map("conic", lat0 = 30) +
   ggtitle("WA County Potato Acreage 1965")
-#loop attempt 
-county.graphs <-function(JoinedSpreadCounties, na.rm = TRUE, ...){
-  county_list <- unique(JoinedSpreadCounties$subregion)
-  for (i in seq_along(county_list)) {
-    plot <- ggplot(subset(JoinedSpreadCounties, JoinedSpreadCounties==county.list[i]),
-                   aes(x=long, y=lat, group=group,
-                color="black", lwd=0.3, alpha=0.8))
-    print(plot)
-  }
-}
+
 
 #Add surrounding states and provinces to WA map
 us <- getData("GADM",country="USA",level=1)
@@ -528,63 +421,7 @@ PNWAcreage1965 <- ggplot(us.states,
  coord_map("bonne", lat0 = 50,
             xlim = c(-125, -114),ylim = c(42, 50))+
   xlab("Longitude") +
-  ylab("Latitude") 
-
-# Gather map plots
-JoinedSpreadCounties %>%
-  gather(key="subregion", value="Acreage1965")%>%
-  ggplot(us.states,
-       aes(x=long, y=lat, group=group))+
-  geom_path(size=0.25)+
-  geom_path(data=ca.provinces, size=0.25,color="grey60")+
-  geom_polygon(data=subset(us.states, NAME_1 %in% c('Idaho', 'Oregon', 'California', 'Utah', 'Montana', 'Nevada', 'Wyoming' )),
-               aes(x=long, y=lat, group=group), fill="white", colour = "grey50", size=0.50)+ 
- geom_polygon(data=JoinedSpreadCounties ,
-               aes(x=long, y=lat, group=group,
-               fill=Acreage1965),
-                color="black", lwd=0.3, alpha=0.8) +
-  scale_fill_gradient(low="blue", high="red") +
-  theme_classic() + coord_map("conic", lat0 = 30) +
-  ggtitle("WA County Potato Acreage 1965") + 
-  theme(plot.title = element_text(hjust = 0.5)) +
-  labs(fill = "Acreage")+
-  labs(caption = "Counties shown in grey were not included in the NASS data set.") +
-  theme(plot.caption = element_text(hjust = 0.5))+ 
-  theme(panel.background = element_rect(fill = "white", colour = "grey50"))+
- coord_map("bonne", lat0 = 50,
-            xlim = c(-125, -114),ylim = c(42, 50))+
-  xlab("Longitude") +
   ylab("Latitude")
-
-#Looping map plots
-acreage_cols <- c(7:10)
-plot=list(seq(length(acreage_cols)))
-for (c in seq_along(acreage_cols)){
-  plot[[c]]=ggplot(us.states,
-       aes(x=long, y=lat, group=group))+
-  geom_path(size=0.25)+
-  geom_path(data=ca.provinces, size=0.25,color="grey60")+
-  geom_polygon(data=subset(us.states, NAME_1 %in% c('Idaho', 'Oregon', 'California', 'Utah', 'Montana', 'Nevada', 'Wyoming' )),
-               aes(x=long, y=lat, group=group), fill="white", colour = "grey50", size=0.50)+ 
- geom_polygon(data=JoinedSpreadCounties ,
-               aes(x=long, y=lat, group=group,
-               fill=acreage_cols),
-                color="black", lwd=0.3, alpha=0.8) +
-  scale_fill_gradient(low="blue", high="red") +
-  theme_classic() + coord_map("conic", lat0 = 30) +
-  ggtitle("WA County Potato Acreage") + 
-  theme(plot.title = element_text(hjust = 0.5)) +
-  labs(fill = "Acreage")+
-  labs(caption = "Counties shown in grey were not included in the NASS data set.") +
-  theme(plot.caption = element_text(hjust = 0.5))+ 
-  theme(panel.background = element_rect(fill = "white", colour = "grey50"))+
- coord_map("bonne", lat0 = 50,
-            xlim = c(-125, -114),ylim = c(42, 50))+
-  xlab("Longitude") +
-  ylab("Latitude") +
-  facet_wrap(~ acreage_cols, ncol= 4, scales="free")
-}
-
 
 ```
  
@@ -957,4 +794,242 @@ Data2019 <- dta %>%
   subset(year==2019)#No specific counties listed
 Data2017 <- dta %>% 
   subset(year==2017) #Multiple acreages listed for the same county (same county, same year, different acreages, may just be different regions within the county). Check sector_desc, domain_desc, util_practice_desc, short_desc
+```
+```{r}
+#Spreading data, making long data wide so we can make an acreage map for each year
+SpreadAcreage <- spread(ShortHistoricAcreage, Year,Value)
+
+#Converting NA to 0 (For counties included in the data set for years when they did not report any acreage, we will consider that 0 acreages.)
+SpreadAcreage[is.na(SpreadAcreage)] <- 0
+
+# Adding counties not included in the NASS data set so they will be included on the map, but without any acreage associated with them: Asotin, Chelan, Clallam, Columbia, Ferry, Garfield, Jefferson, Mason, Pacific, Pend Oreille, San Juan, Skamania, Wahkiakum. A single year with NA listed so the rows will add correctly (dummy variable) 
+SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("asotin")
+SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("chelan")
+SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("clallam")
+SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("columbia")
+SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("ferry")
+SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("garfield")
+SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("jefferson")
+SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("mason")
+SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("pacific")
+SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("pend oreille")
+SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("san juan")
+SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("skamania")
+SpreadAcreage[nrow(SpreadAcreage) + 1,] = ("wahkiakum")
+
+#Converting acreage columns (columns 2:50) to numeric
+num_cols <- c(2:50)
+SpreadAcreage[,num_cols] <- lapply(SpreadAcreage[,num_cols] , as.numeric)
+
+#Joined county data, wa_county dataframe is map data for the counties in Washington state, SpreadAcreage includes the  potato acreage for each county over time
+JoinedSpreadCounties <- inner_join(wa_county, SpreadAcreage, by = "subregion")
+
+# Renamed column names for the year data so they can be used to fill the color gradient for the maps 
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1965 = 7)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1966 = 8)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1967 = 9)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1968 = 10)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1969 = 11)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1970 = 12)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1971 = 13)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1972 = 14)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1973 = 15)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1974 = 16)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1975 = 17)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1976 = 18)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1977 = 19)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1978 = 20)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1979 = 21)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1980 = 22)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1981 = 23)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1982 = 24)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1983 = 25)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1984 = 26)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1985 = 27)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1986 = 28)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1987 = 29)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1988 = 30)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1989 = 31)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1990 = 32)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1991 = 33)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1992 = 34)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1993 = 35)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1994 = 36)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1995 = 37)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1996 = 38)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1997 = 39)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1998 = 40)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage1999 = 41)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage2000 = 42)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage2001 = 43)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage2002 = 44)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage2003 = 45)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage2004 = 46)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage2005 = 47)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage2006 = 48)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage2007 = 49)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage2008 =50)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage2009 = 51)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage2010 = 52)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage2011 = 53)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage2012 = 54)
+JoinedSpreadCounties <- JoinedSpreadCounties %>%
+rename(Acreage2014 = 55) 
+
+
+# WA county map with joined data. Color gradient based on 1965 data column
+Acreage1965 <- ggplot() + 
+  geom_polygon(data=JoinedSpreadCounties ,
+               aes(x=long, y=lat, group=group,
+               fill=Acreage1965),
+                color="black", lwd=0.3) +
+  scale_fill_gradient(low="blue", high="red") +
+  theme_classic() + coord_map("conic", lat0 = 30) +
+  ggtitle("WA County Potato Acreage 1965")
+#loop attempt 
+county.graphs <-function(JoinedSpreadCounties, na.rm = TRUE, ...){
+  county_list <- unique(JoinedSpreadCounties$subregion)
+  for (i in seq_along(county_list)) {
+    plot <- ggplot(subset(JoinedSpreadCounties, JoinedSpreadCounties==county.list[i]),
+                   aes(x=long, y=lat, group=group,
+                color="black", lwd=0.3, alpha=0.8))
+    print(plot)
+  }
+}
+
+#Add surrounding states and provinces to WA map
+us <- getData("GADM",country="USA",level=1)
+canada <- getData("GADM",country="CAN",level=1)
+states <- c('Idaho', 'Oregon', 'California', 'Utah', 'Montana', 'Nevada', 'Wyoming')
+provinces <- c("British Columbia", "Alberta")
+# PNW
+us.states <- us[us$NAME_1 %in% states,]
+# Canada
+ca.provinces <- canada[canada$NAME_1 %in% provinces,]
+#WA 1965 map with surrounding states and provinces
+PNWAcreage1965 <- ggplot(us.states,
+       aes(x=long, y=lat, group=group))+
+  geom_path(size=0.25)+
+  geom_path(data=ca.provinces, size=0.25,color="grey60")+
+  geom_polygon(data=subset(us.states, NAME_1 %in% c('Idaho', 'Oregon', 'California', 'Utah', 'Montana', 'Nevada', 'Wyoming' )),
+               aes(x=long, y=lat, group=group), fill="white", colour = "grey50", size=0.50)+ 
+ geom_polygon(data=JoinedSpreadCounties ,
+               aes(x=long, y=lat, group=group,
+               fill=Acreage1965),
+                color="black", lwd=0.3, alpha=0.8) +
+  scale_fill_gradient(low="blue", high="red") +
+  theme_classic() + coord_map("conic", lat0 = 30) +
+  ggtitle("WA County Potato Acreage 1965") + 
+  theme(plot.title = element_text(hjust = 0.5)) +
+  labs(fill = "Acreage")+
+  labs(caption = "Counties shown in grey were not included in the NASS data set.") +
+  theme(plot.caption = element_text(hjust = 0.5))+ 
+  theme(panel.background = element_rect(fill = "white", colour = "grey50"))+
+ coord_map("bonne", lat0 = 50,
+            xlim = c(-125, -114),ylim = c(42, 50))+
+  xlab("Longitude") +
+  ylab("Latitude") 
+
+# Gather map plots
+JoinedSpreadCounties %>%
+  gather(key="subregion", value="Acreage1965")%>%
+  ggplot(us.states,
+       aes(x=long, y=lat, group=group))+
+  geom_path(size=0.25)+
+  geom_path(data=ca.provinces, size=0.25,color="grey60")+
+  geom_polygon(data=subset(us.states, NAME_1 %in% c('Idaho', 'Oregon', 'California', 'Utah', 'Montana', 'Nevada', 'Wyoming' )),
+               aes(x=long, y=lat, group=group), fill="white", colour = "grey50", size=0.50)+ 
+ geom_polygon(data=JoinedSpreadCounties ,
+               aes(x=long, y=lat, group=group,
+               fill=Acreage1965),
+                color="black", lwd=0.3, alpha=0.8) +
+  scale_fill_gradient(low="blue", high="red") +
+  theme_classic() + coord_map("conic", lat0 = 30) +
+  ggtitle("WA County Potato Acreage 1965") + 
+  theme(plot.title = element_text(hjust = 0.5)) +
+  labs(fill = "Acreage")+
+  labs(caption = "Counties shown in grey were not included in the NASS data set.") +
+  theme(plot.caption = element_text(hjust = 0.5))+ 
+  theme(panel.background = element_rect(fill = "white", colour = "grey50"))+
+ coord_map("bonne", lat0 = 50,
+            xlim = c(-125, -114),ylim = c(42, 50))+
+  xlab("Longitude") +
+  ylab("Latitude")
+
+#Looping map plots
+acreage_cols <- c(7:10)
+plot=list(seq(length(acreage_cols)))
+for (c in seq_along(acreage_cols)){
+  plot[[c]]=ggplot(us.states,
+       aes(x=long, y=lat, group=group))+
+  geom_path(size=0.25)+
+  geom_path(data=ca.provinces, size=0.25,color="grey60")+
+  geom_polygon(data=subset(us.states, NAME_1 %in% c('Idaho', 'Oregon', 'California', 'Utah', 'Montana', 'Nevada', 'Wyoming' )),
+               aes(x=long, y=lat, group=group), fill="white", colour = "grey50", size=0.50)+ 
+ geom_polygon(data=JoinedSpreadCounties ,
+               aes(x=long, y=lat, group=group,
+               fill=acreage_cols),
+                color="black", lwd=0.3, alpha=0.8) +
+  scale_fill_gradient(low="blue", high="red") +
+  theme_classic() + coord_map("conic", lat0 = 30) +
+  ggtitle("WA County Potato Acreage") + 
+  theme(plot.title = element_text(hjust = 0.5)) +
+  labs(fill = "Acreage")+
+  labs(caption = "Counties shown in grey were not included in the NASS data set.") +
+  theme(plot.caption = element_text(hjust = 0.5))+ 
+  theme(panel.background = element_rect(fill = "white", colour = "grey50"))+
+ coord_map("bonne", lat0 = 50,
+            xlim = c(-125, -114),ylim = c(42, 50))+
+  xlab("Longitude") +
+  ylab("Latitude") +
+  facet_wrap(~ acreage_cols, ncol= 4, scales="free")
+}
 ```
