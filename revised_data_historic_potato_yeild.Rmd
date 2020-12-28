@@ -14,7 +14,7 @@ library(data.table)
 
 ###Read in crop yeild file
 ```{r}
-dta <- read_csv("Documents/GitHub/PotatoAcerageAndYields/WA_potato_yield_revised.csv")
+dta <- read_csv("/Users/elman/Documents/GitHub/PotatoAcerageAndYields/WA_potato_yield_revised.csv")
 view(dta)
 ```
 
@@ -29,7 +29,7 @@ table(dta$Year) #number of entries per year
 
 ###Summary statistics
 ```{r}
-class(dta$value) #checking class of value
+class(dta$Value) #checking class of value
 ```
 
 ```{r}
@@ -39,6 +39,9 @@ summary(dta$Value) #summaries of the yeild values
 ```{r}
 duplicates_dta <-duplicated(dta) #determine if duplicate data is detected
 isTRUE(duplicates_dta)
+```
+```{r}
+lapply(dta, unique) #Inspect unique values, find which counties are not included.
 ```
 
 ###Plot data
@@ -106,20 +109,21 @@ summary(df) #Summary of dataframe
 
 ### Check for missing values
 ```{r}
-is.na(df)
+df_nas <- is.na(df$Value)
+sum(df_nas)
 ```
 ### Open map data
 ```{r message=F, warning=F, fig.cap="Potato acreage in Washington state over time", echo=FALSE}
 MainStates <- map_data("state")
 ```
-# Average acreage of WA counties over time
+
+# Average yeild of WA counties over time
 ```{r}
 # Automate county level average for each county
 MuYeildDf <- df %>%
   group_by(County) %>%
   summarise('MuYeild' = mean(Value, na.rm = TRUE)) %>%
-  dplyr::select(MuYeild, County) 
-#Need to manually add in Garfield county with 0 yeild (not included on original dataframe, did not have any potato acreage listed)
+  dplyr::select(MuYeild, County) #Need to manually add in counties named "Other", or not present in the data frame
 
 #Check which counties are missing data
 
