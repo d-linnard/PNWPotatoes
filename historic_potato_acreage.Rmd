@@ -375,7 +375,7 @@ JoinedCounties <- inner_join(wa_county, ShortHistoricAcreage, by = "subregion")
 
 #Gather plots
 GatheredAcreage <- JoinedCounties %>%
-gather(subregion, Value) %>%
+gather(subregion, Value, -Year) %>% #gather data from all columns except year (will be it's own column in new df) and places it into new columns: subregion and value
     mutate(series = factor(subregion,
                            levels = c('Acreage1965', 'Acreage1966', 'Acreage1967', 'Acreage1968', 'Acreage1969', 'Acreage1970', 'Acreage1971', 'Acreage1972', 'Acreage1973', 'Acreage1974', 'Acreage1975', 'Acreage1976', 'Acreage1977', 'Acreage1978', 'Acreage1979', 'Acreage1980', 'Acreage1981', 'Acreage1982', 'Acreage1983', 'Acreage1984', 'Acreage1985', 'Acreage1986', 'Acreage1987', 'Acreage1988', 'Acreage1989', 'Acreage1990', 'Acreage1991', 'Acreage1992', 'Acreage1993', 'Acreage1994', 'Acreage1995', 'Acreage1996', 'Acreage1997', 'Acreage1998', 'Acreage1999', 'Acreage2000', 'Acreage2001', 'Acreage2002', 'Acreage2003', 'Acreage2004', 'Acreage2005', 'Acreage2006', 'Acreage2007', 'Acreage2008', 'Acreage2009', 'Acreage2010', 'Acreage2011', 'Acreage2012', 'Acreage2014')))
 
