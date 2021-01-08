@@ -90,25 +90,18 @@ colnames(ShortHistoricAcreage)[1] <- "subregion"
 
 ShortHistoricAcreage$subregion <- tolower(ShortHistoricAcreage$subregion) 
 
+## Fill in 0 as a placement for years when counties did not report any acreage. In some cases, counties only reported acreage for some years, but to properly map, the counties need to have an entry for each year or else they will not be included on the map when they did not report and no county boundaries will map on these years
+ShortHistoricAcreageFilled <- ShortHistoricAcreage %>%
+    complete(subregion, Year = 1965:2014, 
+             fill = list(Value = 0)) 
+## Read in csv of counties that were not included in the original NASS dataset: Asotin, Chelan, Clallam, Columbia, Ferry, Garfield, Jefferson, Mason, Pacific, Pend Oreille, San Juan, Skamania, Wahkiakum. This is done so the county borders of these counties will properly map. 
+NAWACounties <- read.csv(file = 'NA_wa_counties.csv')
 
-## Adding counties not included in the NASS data set so they will be included on the map, but without any acreage associated with them: Asotin, Chelan, Clallam, Columbia, Ferry, Garfield, Jefferson, Mason, Pacific, Pend Oreille, San Juan, Skamania, Wahkiakum. A single year with NA listed so the rows will add correctly (dummy variable) 
-ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("asotin", 1965, NA)
-ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("chelan", 1965, NA)
-ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("clallam", 1965, NA)
-ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("columbia", 1965, NA)
-ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("ferry", 1965, NA)
-ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("garfield", 1965, NA)
-ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("jefferson", 1965, NA)
-ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("mason", 1965, NA)
-ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("pacific", 1965, NA)
-ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("pend oreille", 1965, NA)
-ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("san juan", 1965, NA)
-ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("skamania", 1965, NA)
-ShortHistoricAcreage[nrow(ShortHistoricAcreage) + 1,] = list("wahkiakum", 1965, NA)
+##Use rbind to add the NAWACounties df to the ShortHistoricAcreageFilled df
+FullHistoricAcreage <- rbind(ShortHistoricAcreageFilled, NAWACounties)
 
-
-##Joined county data, wa_county dataframe is map data for the counties in Washington state, ShortHistoricAcreage includes the  potato acreage for each county over time
-JoinedCounties <- inner_join(wa_county, ShortHistoricAcreage, by = "subregion")
+##Joined county data, wa_county dataframe is map data for the counties in Washington state, FullHistoricAcreage includes the  potato acreage for each county over time
+JoinedCounties <- inner_join(wa_county, FullHistoricAcreage, by = "subregion")
 
 ##Subset data into a few sections of year data- this makes processing the iterative maps easier/faster in terms of processing power needed by the computer
 SubsetYears1965to1969 <- subset(JoinedCounties, Year<1970)
@@ -119,7 +112,9 @@ SubsetYears2000to2014 <- subset(JoinedCounties, Year>1999)
 ```
 
 ```{r}
-##Iterative year county maps: First take the code for the states and provinces surrounding WA (lines 123-128). Then add code for the WA county map using the first section of subset years (lines 129-144). Use facet_wrap (line 134) to create a map based on each year of data. 
+##Iterative year county maps: First take the code for the states and provinces surrounding WA (lines 118-123). Then add code for the WA county map using the first section of subset years (lines 124-139). Use facet_wrap (line 129) to create a map based on each year of data.
+
+#Maps for 1965-1969
 ggplot(us.states,
        aes(x=long, y=lat, group=group))+
   geom_path(size=0.25)+
@@ -142,6 +137,103 @@ ggplot(us.states,
             xlim = c(-125, -114),ylim = c(42, 50))+
   xlab("Longitude") +
   ylab("Latitude")
+  
+  #Maps for 1970-1979
+ggplot(us.states,
+       aes(x=long, y=lat, group=group))+
+  geom_path(size=0.25)+
+  geom_path(data=ca.provinces, size=0.25,color="grey60")+
+  geom_polygon(data=subset(us.states, NAME_1 %in% c('Idaho', 'Oregon', 'California', 'Utah', 'Montana', 'Nevada', 'Wyoming', 'Washington' )),
+               aes(x=long, y=lat, group=group), fill="white", colour = "grey50", size=0.50)+ 
+ geom_polygon(data=SubsetYears1970to1979,
+               aes(x=long, y=lat, group=group,
+               fill=Value), ###Fill color based on acreage value
+                color="black", lwd=0.3, alpha=0.8) +
+  scale_fill_gradient(low="blue", high="red") +
+  facet_wrap(~ Year)+ ###Create a map based on each year
+  theme_classic() + coord_map("conic", lat0 = 30) + 
+  theme(plot.title = element_text(hjust = 0.5)) +
+  labs(fill = "Acreage")+
+  labs(caption = "Counties shown in grey were not included in the NASS data set.") +
+  theme(plot.caption = element_text(hjust = 0.5))+ 
+  theme(panel.background = element_rect(fill = "white", colour = "grey50"))+
+ coord_map("bonne", lat0 = 50,
+            xlim = c(-125, -114),ylim = c(42, 50))+
+  xlab("Longitude") +
+  ylab("Latitude")
+
+#Maps for 1980-1989
+ggplot(us.states,
+       aes(x=long, y=lat, group=group))+
+  geom_path(size=0.25)+
+  geom_path(data=ca.provinces, size=0.25,color="grey60")+
+  geom_polygon(data=subset(us.states, NAME_1 %in% c('Idaho', 'Oregon', 'California', 'Utah', 'Montana', 'Nevada', 'Wyoming', 'Washington' )),
+               aes(x=long, y=lat, group=group), fill="white", colour = "grey50", size=0.50)+ 
+ geom_polygon(data=SubsetYears1980to1989,
+               aes(x=long, y=lat, group=group,
+               fill=Value), ###Fill color based on acreage value
+                color="black", lwd=0.3, alpha=0.8) +
+  scale_fill_gradient(low="blue", high="red") +
+  facet_wrap(~ Year)+ ###Create a map based on each year
+  theme_classic() + coord_map("conic", lat0 = 30) + 
+  theme(plot.title = element_text(hjust = 0.5)) +
+  labs(fill = "Acreage")+
+  labs(caption = "Counties shown in grey were not included in the NASS data set.") +
+  theme(plot.caption = element_text(hjust = 0.5))+ 
+  theme(panel.background = element_rect(fill = "white", colour = "grey50"))+
+ coord_map("bonne", lat0 = 50,
+            xlim = c(-125, -114),ylim = c(42, 50))+
+  xlab("Longitude") +
+  ylab("Latitude")
+
+#Maps for 1990-1999
+ggplot(us.states,
+       aes(x=long, y=lat, group=group))+
+  geom_path(size=0.25)+
+  geom_path(data=ca.provinces, size=0.25,color="grey60")+
+  geom_polygon(data=subset(us.states, NAME_1 %in% c('Idaho', 'Oregon', 'California', 'Utah', 'Montana', 'Nevada', 'Wyoming', 'Washington' )),
+               aes(x=long, y=lat, group=group), fill="white", colour = "grey50", size=0.50)+ 
+ geom_polygon(data=SubsetYears1990to1999,
+               aes(x=long, y=lat, group=group,
+               fill=Value), ###Fill color based on acreage value
+                color="black", lwd=0.3, alpha=0.8) +
+  scale_fill_gradient(low="blue", high="red") +
+  facet_wrap(~ Year)+ ###Create a map based on each year
+  theme_classic() + coord_map("conic", lat0 = 30) + 
+  theme(plot.title = element_text(hjust = 0.5)) +
+  labs(fill = "Acreage")+
+  labs(caption = "Counties shown in grey were not included in the NASS data set.") +
+  theme(plot.caption = element_text(hjust = 0.5))+ 
+  theme(panel.background = element_rect(fill = "white", colour = "grey50"))+
+ coord_map("bonne", lat0 = 50,
+            xlim = c(-125, -114),ylim = c(42, 50))+
+  xlab("Longitude") +
+  ylab("Latitude")
+
+#Maps for 2000-2014
+ggplot(us.states,
+       aes(x=long, y=lat, group=group))+
+  geom_path(size=0.25)+
+  geom_path(data=ca.provinces, size=0.25,color="grey60")+
+  geom_polygon(data=subset(us.states, NAME_1 %in% c('Idaho', 'Oregon', 'California', 'Utah', 'Montana', 'Nevada', 'Wyoming', 'Washington' )),
+               aes(x=long, y=lat, group=group), fill="white", colour = "grey50", size=0.50)+ 
+ geom_polygon(data=SubsetYears2000to2014,
+               aes(x=long, y=lat, group=group,
+               fill=Value), ###Fill color based on acreage value
+                color="black", lwd=0.3, alpha=0.8) +
+  scale_fill_gradient(low="blue", high="red") +
+  facet_wrap(~ Year)+ ###Create a map based on each year
+  theme_classic() + coord_map("conic", lat0 = 30) + 
+  theme(plot.title = element_text(hjust = 0.5)) +
+  labs(fill = "Acreage")+
+  labs(caption = "Counties shown in grey were not included in the NASS data set.") +
+  theme(plot.caption = element_text(hjust = 0.5))+ 
+  theme(panel.background = element_rect(fill = "white", colour = "grey50"))+
+ coord_map("bonne", lat0 = 50,
+            xlim = c(-125, -114),ylim = c(42, 50))+
+  xlab("Longitude") +
+  ylab("Latitude")
+
 ```
 
 
