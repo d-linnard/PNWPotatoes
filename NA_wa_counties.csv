@@ -1,0 +1,651 @@
+subregion,Year,Value
+asotin,1965,NA
+asotin,1966,NA
+asotin,1967,NA
+asotin,1968,NA
+asotin,1969,NA
+asotin,1970,NA
+asotin,1971,NA
+asotin,1972,NA
+asotin,1973,NA
+asotin,1974,NA
+asotin,1975,NA
+asotin,1976,NA
+asotin,1977,NA
+asotin,1978,NA
+asotin,1979,NA
+asotin,1980,NA
+asotin,1981,NA
+asotin,1982,NA
+asotin,1983,NA
+asotin,1984,NA
+asotin,1985,NA
+asotin,1986,NA
+asotin,1987,NA
+asotin,1988,NA
+asotin,1989,NA
+asotin,1990,NA
+asotin,1991,NA
+asotin,1992,NA
+asotin,1993,NA
+asotin,1994,NA
+asotin,1995,NA
+asotin,1996,NA
+asotin,1997,NA
+asotin,1998,NA
+asotin,1999,NA
+asotin,2000,NA
+asotin,2001,NA
+asotin,2002,NA
+asotin,2003,NA
+asotin,2004,NA
+asotin,2005,NA
+asotin,2006,NA
+asotin,2007,NA
+asotin,2008,NA
+asotin,2009,NA
+asotin,2010,NA
+asotin,2011,NA
+asotin,2012,NA
+asotin,2013,NA
+asotin,2014,NA
+chelan,1965,NA
+chelan,1966,NA
+chelan,1967,NA
+chelan,1968,NA
+chelan,1969,NA
+chelan,1970,NA
+chelan,1971,NA
+chelan,1972,NA
+chelan,1973,NA
+chelan,1974,NA
+chelan,1975,NA
+chelan,1976,NA
+chelan,1977,NA
+chelan,1978,NA
+chelan,1979,NA
+chelan,1980,NA
+chelan,1981,NA
+chelan,1982,NA
+chelan,1983,NA
+chelan,1984,NA
+chelan,1985,NA
+chelan,1986,NA
+chelan,1987,NA
+chelan,1988,NA
+chelan,1989,NA
+chelan,1990,NA
+chelan,1991,NA
+chelan,1992,NA
+chelan,1993,NA
+chelan,1994,NA
+chelan,1995,NA
+chelan,1996,NA
+chelan,1997,NA
+chelan,1998,NA
+chelan,1999,NA
+chelan,2000,NA
+chelan,2001,NA
+chelan,2002,NA
+chelan,2003,NA
+chelan,2004,NA
+chelan,2005,NA
+chelan,2006,NA
+chelan,2007,NA
+chelan,2008,NA
+chelan,2009,NA
+chelan,2010,NA
+chelan,2011,NA
+chelan,2012,NA
+chelan,2013,NA
+chelan,2014,NA
+clallam,1965,NA
+clallam,1966,NA
+clallam,1967,NA
+clallam,1968,NA
+clallam,1969,NA
+clallam,1970,NA
+clallam,1971,NA
+clallam,1972,NA
+clallam,1973,NA
+clallam,1974,NA
+clallam,1975,NA
+clallam,1976,NA
+clallam,1977,NA
+clallam,1978,NA
+clallam,1979,NA
+clallam,1980,NA
+clallam,1981,NA
+clallam,1982,NA
+clallam,1983,NA
+clallam,1984,NA
+clallam,1985,NA
+clallam,1986,NA
+clallam,1987,NA
+clallam,1988,NA
+clallam,1989,NA
+clallam,1990,NA
+clallam,1991,NA
+clallam,1992,NA
+clallam,1993,NA
+clallam,1994,NA
+clallam,1995,NA
+clallam,1996,NA
+clallam,1997,NA
+clallam,1998,NA
+clallam,1999,NA
+clallam,2000,NA
+clallam,2001,NA
+clallam,2002,NA
+clallam,2003,NA
+clallam,2004,NA
+clallam,2005,NA
+clallam,2006,NA
+clallam,2007,NA
+clallam,2008,NA
+clallam,2009,NA
+clallam,2010,NA
+clallam,2011,NA
+clallam,2012,NA
+clallam,2013,NA
+clallam,2014,NA
+columbia,1965,NA
+columbia,1966,NA
+columbia,1967,NA
+columbia,1968,NA
+columbia,1969,NA
+columbia,1970,NA
+columbia,1971,NA
+columbia,1972,NA
+columbia,1973,NA
+columbia,1974,NA
+columbia,1975,NA
+columbia,1976,NA
+columbia,1977,NA
+columbia,1978,NA
+columbia,1979,NA
+columbia,1980,NA
+columbia,1981,NA
+columbia,1982,NA
+columbia,1983,NA
+columbia,1984,NA
+columbia,1985,NA
+columbia,1986,NA
+columbia,1987,NA
+columbia,1988,NA
+columbia,1989,NA
+columbia,1990,NA
+columbia,1991,NA
+columbia,1992,NA
+columbia,1993,NA
+columbia,1994,NA
+columbia,1995,NA
+columbia,1996,NA
+columbia,1997,NA
+columbia,1998,NA
+columbia,1999,NA
+columbia,2000,NA
+columbia,2001,NA
+columbia,2002,NA
+columbia,2003,NA
+columbia,2004,NA
+columbia,2005,NA
+columbia,2006,NA
+columbia,2007,NA
+columbia,2008,NA
+columbia,2009,NA
+columbia,2010,NA
+columbia,2011,NA
+columbia,2012,NA
+columbia,2013,NA
+columbia,2014,NA
+ferry,1965,NA
+ferry,1966,NA
+ferry,1967,NA
+ferry,1968,NA
+ferry,1969,NA
+ferry,1970,NA
+ferry,1971,NA
+ferry,1972,NA
+ferry,1973,NA
+ferry,1974,NA
+ferry,1975,NA
+ferry,1976,NA
+ferry,1977,NA
+ferry,1978,NA
+ferry,1979,NA
+ferry,1980,NA
+ferry,1981,NA
+ferry,1982,NA
+ferry,1983,NA
+ferry,1984,NA
+ferry,1985,NA
+ferry,1986,NA
+ferry,1987,NA
+ferry,1988,NA
+ferry,1989,NA
+ferry,1990,NA
+ferry,1991,NA
+ferry,1992,NA
+ferry,1993,NA
+ferry,1994,NA
+ferry,1995,NA
+ferry,1996,NA
+ferry,1997,NA
+ferry,1998,NA
+ferry,1999,NA
+ferry,2000,NA
+ferry,2001,NA
+ferry,2002,NA
+ferry,2003,NA
+ferry,2004,NA
+ferry,2005,NA
+ferry,2006,NA
+ferry,2007,NA
+ferry,2008,NA
+ferry,2009,NA
+ferry,2010,NA
+ferry,2011,NA
+ferry,2012,NA
+ferry,2013,NA
+ferry,2014,NA
+garfield,1965,NA
+garfield,1966,NA
+garfield,1967,NA
+garfield,1968,NA
+garfield,1969,NA
+garfield,1970,NA
+garfield,1971,NA
+garfield,1972,NA
+garfield,1973,NA
+garfield,1974,NA
+garfield,1975,NA
+garfield,1976,NA
+garfield,1977,NA
+garfield,1978,NA
+garfield,1979,NA
+garfield,1980,NA
+garfield,1981,NA
+garfield,1982,NA
+garfield,1983,NA
+garfield,1984,NA
+garfield,1985,NA
+garfield,1986,NA
+garfield,1987,NA
+garfield,1988,NA
+garfield,1989,NA
+garfield,1990,NA
+garfield,1991,NA
+garfield,1992,NA
+garfield,1993,NA
+garfield,1994,NA
+garfield,1995,NA
+garfield,1996,NA
+garfield,1997,NA
+garfield,1998,NA
+garfield,1999,NA
+garfield,2000,NA
+garfield,2001,NA
+garfield,2002,NA
+garfield,2003,NA
+garfield,2004,NA
+garfield,2005,NA
+garfield,2006,NA
+garfield,2007,NA
+garfield,2008,NA
+garfield,2009,NA
+garfield,2010,NA
+garfield,2011,NA
+garfield,2012,NA
+garfield,2013,NA
+garfield,2014,NA
+jefferson,1965,NA
+jefferson,1966,NA
+jefferson,1967,NA
+jefferson,1968,NA
+jefferson,1969,NA
+jefferson,1970,NA
+jefferson,1971,NA
+jefferson,1972,NA
+jefferson,1973,NA
+jefferson,1974,NA
+jefferson,1975,NA
+jefferson,1976,NA
+jefferson,1977,NA
+jefferson,1978,NA
+jefferson,1979,NA
+jefferson,1980,NA
+jefferson,1981,NA
+jefferson,1982,NA
+jefferson,1983,NA
+jefferson,1984,NA
+jefferson,1985,NA
+jefferson,1986,NA
+jefferson,1987,NA
+jefferson,1988,NA
+jefferson,1989,NA
+jefferson,1990,NA
+jefferson,1991,NA
+jefferson,1992,NA
+jefferson,1993,NA
+jefferson,1994,NA
+jefferson,1995,NA
+jefferson,1996,NA
+jefferson,1997,NA
+jefferson,1998,NA
+jefferson,1999,NA
+jefferson,2000,NA
+jefferson,2001,NA
+jefferson,2002,NA
+jefferson,2003,NA
+jefferson,2004,NA
+jefferson,2005,NA
+jefferson,2006,NA
+jefferson,2007,NA
+jefferson,2008,NA
+jefferson,2009,NA
+jefferson,2010,NA
+jefferson,2011,NA
+jefferson,2012,NA
+jefferson,2013,NA
+jefferson,2014,NA
+mason,1965,NA
+mason,1966,NA
+mason,1967,NA
+mason,1968,NA
+mason,1969,NA
+mason,1970,NA
+mason,1971,NA
+mason,1972,NA
+mason,1973,NA
+mason,1974,NA
+mason,1975,NA
+mason,1976,NA
+mason,1977,NA
+mason,1978,NA
+mason,1979,NA
+mason,1980,NA
+mason,1981,NA
+mason,1982,NA
+mason,1983,NA
+mason,1984,NA
+mason,1985,NA
+mason,1986,NA
+mason,1987,NA
+mason,1988,NA
+mason,1989,NA
+mason,1990,NA
+mason,1991,NA
+mason,1992,NA
+mason,1993,NA
+mason,1994,NA
+mason,1995,NA
+mason,1996,NA
+mason,1997,NA
+mason,1998,NA
+mason,1999,NA
+mason,2000,NA
+mason,2001,NA
+mason,2002,NA
+mason,2003,NA
+mason,2004,NA
+mason,2005,NA
+mason,2006,NA
+mason,2007,NA
+mason,2008,NA
+mason,2009,NA
+mason,2010,NA
+mason,2011,NA
+mason,2012,NA
+mason,2013,NA
+mason,2014,NA
+pacific,1965,NA
+pacific,1966,NA
+pacific,1967,NA
+pacific,1968,NA
+pacific,1969,NA
+pacific,1970,NA
+pacific,1971,NA
+pacific,1972,NA
+pacific,1973,NA
+pacific,1974,NA
+pacific,1975,NA
+pacific,1976,NA
+pacific,1977,NA
+pacific,1978,NA
+pacific,1979,NA
+pacific,1980,NA
+pacific,1981,NA
+pacific,1982,NA
+pacific,1983,NA
+pacific,1984,NA
+pacific,1985,NA
+pacific,1986,NA
+pacific,1987,NA
+pacific,1988,NA
+pacific,1989,NA
+pacific,1990,NA
+pacific,1991,NA
+pacific,1992,NA
+pacific,1993,NA
+pacific,1994,NA
+pacific,1995,NA
+pacific,1996,NA
+pacific,1997,NA
+pacific,1998,NA
+pacific,1999,NA
+pacific,2000,NA
+pacific,2001,NA
+pacific,2002,NA
+pacific,2003,NA
+pacific,2004,NA
+pacific,2005,NA
+pacific,2006,NA
+pacific,2007,NA
+pacific,2008,NA
+pacific,2009,NA
+pacific,2010,NA
+pacific,2011,NA
+pacific,2012,NA
+pacific,2013,NA
+pacific,2014,NA
+pend oreille,1965,NA
+pend oreille,1966,NA
+pend oreille,1967,NA
+pend oreille,1968,NA
+pend oreille,1969,NA
+pend oreille,1970,NA
+pend oreille,1971,NA
+pend oreille,1972,NA
+pend oreille,1973,NA
+pend oreille,1974,NA
+pend oreille,1975,NA
+pend oreille,1976,NA
+pend oreille,1977,NA
+pend oreille,1978,NA
+pend oreille,1979,NA
+pend oreille,1980,NA
+pend oreille,1981,NA
+pend oreille,1982,NA
+pend oreille,1983,NA
+pend oreille,1984,NA
+pend oreille,1985,NA
+pend oreille,1986,NA
+pend oreille,1987,NA
+pend oreille,1988,NA
+pend oreille,1989,NA
+pend oreille,1990,NA
+pend oreille,1991,NA
+pend oreille,1992,NA
+pend oreille,1993,NA
+pend oreille,1994,NA
+pend oreille,1995,NA
+pend oreille,1996,NA
+pend oreille,1997,NA
+pend oreille,1998,NA
+pend oreille,1999,NA
+pend oreille,2000,NA
+pend oreille,2001,NA
+pend oreille,2002,NA
+pend oreille,2003,NA
+pend oreille,2004,NA
+pend oreille,2005,NA
+pend oreille,2006,NA
+pend oreille,2007,NA
+pend oreille,2008,NA
+pend oreille,2009,NA
+pend oreille,2010,NA
+pend oreille,2011,NA
+pend oreille,2012,NA
+pend oreille,2013,NA
+pend oreille,2014,NA
+san juan,1965,NA
+san juan,1966,NA
+san juan,1967,NA
+san juan,1968,NA
+san juan,1969,NA
+san juan,1970,NA
+san juan,1971,NA
+san juan,1972,NA
+san juan,1973,NA
+san juan,1974,NA
+san juan,1975,NA
+san juan,1976,NA
+san juan,1977,NA
+san juan,1978,NA
+san juan,1979,NA
+san juan,1980,NA
+san juan,1981,NA
+san juan,1982,NA
+san juan,1983,NA
+san juan,1984,NA
+san juan,1985,NA
+san juan,1986,NA
+san juan,1987,NA
+san juan,1988,NA
+san juan,1989,NA
+san juan,1990,NA
+san juan,1991,NA
+san juan,1992,NA
+san juan,1993,NA
+san juan,1994,NA
+san juan,1995,NA
+san juan,1996,NA
+san juan,1997,NA
+san juan,1998,NA
+san juan,1999,NA
+san juan,2000,NA
+san juan,2001,NA
+san juan,2002,NA
+san juan,2003,NA
+san juan,2004,NA
+san juan,2005,NA
+san juan,2006,NA
+san juan,2007,NA
+san juan,2008,NA
+san juan,2009,NA
+san juan,2010,NA
+san juan,2011,NA
+san juan,2012,NA
+san juan,2013,NA
+san juan,2014,NA
+skamania,1965,NA
+skamania,1966,NA
+skamania,1967,NA
+skamania,1968,NA
+skamania,1969,NA
+skamania,1970,NA
+skamania,1971,NA
+skamania,1972,NA
+skamania,1973,NA
+skamania,1974,NA
+skamania,1975,NA
+skamania,1976,NA
+skamania,1977,NA
+skamania,1978,NA
+skamania,1979,NA
+skamania,1980,NA
+skamania,1981,NA
+skamania,1982,NA
+skamania,1983,NA
+skamania,1984,NA
+skamania,1985,NA
+skamania,1986,NA
+skamania,1987,NA
+skamania,1988,NA
+skamania,1989,NA
+skamania,1990,NA
+skamania,1991,NA
+skamania,1992,NA
+skamania,1993,NA
+skamania,1994,NA
+skamania,1995,NA
+skamania,1996,NA
+skamania,1997,NA
+skamania,1998,NA
+skamania,1999,NA
+skamania,2000,NA
+skamania,2001,NA
+skamania,2002,NA
+skamania,2003,NA
+skamania,2004,NA
+skamania,2005,NA
+skamania,2006,NA
+skamania,2007,NA
+skamania,2008,NA
+skamania,2009,NA
+skamania,2010,NA
+skamania,2011,NA
+skamania,2012,NA
+skamania,2013,NA
+skamania,2014,NA
+wahkiakum,1965,NA
+wahkiakum,1966,NA
+wahkiakum,1967,NA
+wahkiakum,1968,NA
+wahkiakum,1969,NA
+wahkiakum,1970,NA
+wahkiakum,1971,NA
+wahkiakum,1972,NA
+wahkiakum,1973,NA
+wahkiakum,1974,NA
+wahkiakum,1975,NA
+wahkiakum,1976,NA
+wahkiakum,1977,NA
+wahkiakum,1978,NA
+wahkiakum,1979,NA
+wahkiakum,1980,NA
+wahkiakum,1981,NA
+wahkiakum,1982,NA
+wahkiakum,1983,NA
+wahkiakum,1984,NA
+wahkiakum,1985,NA
+wahkiakum,1986,NA
+wahkiakum,1987,NA
+wahkiakum,1988,NA
+wahkiakum,1989,NA
+wahkiakum,1990,NA
+wahkiakum,1991,NA
+wahkiakum,1992,NA
+wahkiakum,1993,NA
+wahkiakum,1994,NA
+wahkiakum,1995,NA
+wahkiakum,1996,NA
+wahkiakum,1997,NA
+wahkiakum,1998,NA
+wahkiakum,1999,NA
+wahkiakum,2000,NA
+wahkiakum,2001,NA
+wahkiakum,2002,NA
+wahkiakum,2003,NA
+wahkiakum,2004,NA
+wahkiakum,2005,NA
+wahkiakum,2006,NA
+wahkiakum,2007,NA
+wahkiakum,2008,NA
+wahkiakum,2009,NA
+wahkiakum,2010,NA
+wahkiakum,2011,NA
+wahkiakum,2012,NA
+wahkiakum,2013,NA
+wahkiakum,2014,NA
