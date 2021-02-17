@@ -113,7 +113,7 @@ SubsetYears2000to2014 <- subset(JoinedCounties, Year>1999)
 ```
 
 ```{r}
-##Iterative year county maps: First take the code for the states and provinces surrounding WA (lines 119-124). Then add code for the WA county map using the first section of subset years (lines 125-140). Use facet_wrap (line 130) to create a map based on each year of data.
+##Iterative year county maps: First take the code for the states and provinces surrounding WA (lines 119-124). Then add code for the WA county map using the first section of subset years (lines 125-142). Use facet_wrap (line 131) to create a map based on each year of data. All maps have a set scale of 0 to 45000 acres. 
 
 #Maps for 1965-1969
 ggplot(us.states,
@@ -126,7 +126,8 @@ ggplot(us.states,
                aes(x=long, y=lat, group=group,
                fill=Value), ###Fill color based on acreage value
                 color="black", lwd=0.3, alpha=0.8) +
-  scale_fill_gradient(low="blue", high="red") +
+  scale_fill_gradient(low="blue", high="red",
+                      limits=(c(0, 45000))) +
   facet_wrap(~ Year)+ ###Create a map based on each year
   theme_classic() + coord_map("conic", lat0 = 30) + 
   theme(plot.title = element_text(hjust = 0.5)) +
@@ -151,7 +152,8 @@ ggplot(us.states,
                aes(x=long, y=lat, group=group,
                fill=Value), ###Fill color based on acreage value
                 color="black", lwd=0.3, alpha=0.8) +
-  scale_fill_gradient(low="blue", high="red") +
+  scale_fill_gradient(low="blue", high="red",
+                      limits=(c(0, 45000))) +
   facet_wrap(~ Year)+ ###Create a map based on each year
   theme_classic() + coord_map("conic", lat0 = 30) + 
   theme(plot.title = element_text(hjust = 0.5)) +
@@ -176,7 +178,8 @@ ggplot(us.states,
                aes(x=long, y=lat, group=group,
                fill=Value), ###Fill color based on acreage value
                 color="black", lwd=0.3, alpha=0.8) +
-  scale_fill_gradient(low="blue", high="red") +
+  scale_fill_gradient(low="blue", high="red",
+                      limits=(c(0, 45000))) +
   facet_wrap(~ Year)+ ###Create a map based on each year
   theme_classic() + coord_map("conic", lat0 = 30) + 
   theme(plot.title = element_text(hjust = 0.5)) +
@@ -201,7 +204,8 @@ ggplot(us.states,
                aes(x=long, y=lat, group=group,
                fill=Value), ###Fill color based on acreage value
                 color="black", lwd=0.3, alpha=0.8) +
-  scale_fill_gradient(low="blue", high="red") +
+  scale_fill_gradient(low="blue", high="red",
+                      limits=(c(0, 45000))) +
   facet_wrap(~ Year)+ ###Create a map based on each year
   theme_classic() + coord_map("conic", lat0 = 30) + 
   theme(plot.title = element_text(hjust = 0.5)) +
@@ -226,7 +230,8 @@ ggplot(us.states,
                aes(x=long, y=lat, group=group,
                fill=Value), ###Fill color based on acreage value
                 color="black", lwd=0.3, alpha=0.8) +
-  scale_fill_gradient(low="blue", high="red") +
+  scale_fill_gradient(low="blue", high="red",
+                      limits=(c(0, 45000))) +
   facet_wrap(~ Year)+ ###Create a map based on each year
   theme_classic() + coord_map("conic", lat0 = 30) + 
   theme(plot.title = element_text(hjust = 0.5)) +
@@ -272,7 +277,8 @@ ggplot(us.states,
                aes(x=long, y=lat, group=group,
                fill=AveAcreage), ###Fill color based on acreage value
                 color="black", lwd=0.3, alpha=0.8) +
-  scale_fill_gradient(low="blue", high="red") +
+  scale_fill_gradient(low="blue", high="red",
+                      limits=(c(0, 45000)))+
   theme_classic() + coord_map("conic", lat0 = 30) + 
   theme(plot.title = element_text(hjust = 0.5)) +
   labs(fill = "Acreage")+
