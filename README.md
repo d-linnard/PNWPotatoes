@@ -1,7 +1,7 @@
 # PotatoAcerageAndYields
 
 ##AcerageAndYieldsMap
-```HTML
+```
 import { useEffect, useState, useRef } from 'react';
 import {createMap, setViewState} from '@unfolded/map-sdk';
 
